@@ -76,6 +76,7 @@ export const nb: Dictionary = {
     opprettKnapp: 'Opprett avdeling',
     oppretterKnapp: 'Oppretter...',
     harKontoLenke: 'Har du allerede en konto? Logg inn',
+    provDemoKnapp: 'Prøv demo-konto',
   },
   app: {
     tittel: 'Timeplan - SFS 2213',

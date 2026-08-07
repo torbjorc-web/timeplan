@@ -13,6 +13,7 @@ import { betalingRuter } from './routes/betaling.js'
 import { tilbakemeldingerRuter } from './routes/tilbakemeldinger.js'
 import { autentiser, kreverAktivLisens } from './middleware.js'
 import { APP_URL } from './stripe.js'
+import { seedDemoKonto } from './seedDemo.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PORT = Number(process.env.PORT ?? 3001)
@@ -50,6 +51,10 @@ if (existsSync(KLIENT_DIST)) {
   })
 }
 
-app.listen(PORT, () => {
-  console.log(`Timeplan-server kjører på http://localhost:${PORT}`)
-})
+seedDemoKonto()
+  .catch((feil) => console.error('Klarte ikke å seede demo-konto:', feil))
+  .finally(() => {
+    app.listen(PORT, () => {
+      console.log(`Timeplan-server kjører på http://localhost:${PORT}`)
+    })
+  })

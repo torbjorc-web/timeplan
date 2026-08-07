@@ -53,6 +53,7 @@ export interface Dictionary {
     opprettKnapp: string
     oppretterKnapp: string
     harKontoLenke: string
+    provDemoKnapp: string
   }
   app: {
     tittel: string

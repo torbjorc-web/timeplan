@@ -77,4 +77,16 @@ describe('InnloggingPanel', () => {
     await bruker.click(screen.getByRole('button', { name: 'English' }))
     expect(screen.getByRole('heading', { name: /log in/i })).toBeInTheDocument()
   })
+
+  it('logger inn med demo-konto ved klikk på demo-knappen', async () => {
+    vi.mocked(api.apiPost).mockResolvedValue({ navn: 'Demo', rolle: 'avdelingsleder' })
+    const bruker = userEvent.setup()
+    settOpp()
+
+    await bruker.click(screen.getByRole('button', { name: /prøv demo-konto|try demo account/i }))
+
+    await waitFor(() => {
+      expect(api.apiPost).toHaveBeenCalledWith('/auth/login', { brukernavn: 'demo', passord: 'DemoTimeplan2026' })
+    })
+  })
 })

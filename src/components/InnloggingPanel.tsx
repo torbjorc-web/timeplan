@@ -6,6 +6,10 @@ import type { Regelverk } from '../types'
 
 export const REGELVERK_VALG_NOKKEL = 'timeplan-regelverk-valg'
 
+// Må matche DEMO_BRUKERNAVN/DEMO_PASSORD i server/src/seedDemo.ts.
+const DEMO_BRUKERNAVN = 'demo'
+const DEMO_PASSORD = 'DemoTimeplan2026'
+
 export function InnloggingPanel() {
   const { loggInn, registrerAvdeling } = useAuth()
   const { t, sprak, setSprak } = useI18n()
@@ -24,6 +28,18 @@ export function InnloggingPanel() {
     setLaster(true)
     try {
       await loggInn(brukernavn, passord)
+    } catch (err) {
+      setFeilmelding(err instanceof ApiFeil ? err.message : t.feil.loginFeilet)
+    } finally {
+      setLaster(false)
+    }
+  }
+
+  async function handleDemoLogin() {
+    setFeilmelding(null)
+    setLaster(true)
+    try {
+      await loggInn(DEMO_BRUKERNAVN, DEMO_PASSORD)
     } catch (err) {
       setFeilmelding(err instanceof ApiFeil ? err.message : t.feil.loginFeilet)
     } finally {
@@ -81,6 +97,9 @@ export function InnloggingPanel() {
             </button>
             <button type="button" className="knapp-lenke" onClick={() => setVisRegistrering(true)}>
               {t.login.registrerLenke}
+            </button>
+            <button type="button" className="knapp-lenke" onClick={handleDemoLogin} disabled={laster}>
+              {t.login.provDemoKnapp}
             </button>
           </form>
         ) : (

@@ -76,6 +76,7 @@ export const en: Dictionary = {
     opprettKnapp: 'Create department',
     oppretterKnapp: 'Creating...',
     harKontoLenke: 'Already have an account? Log in',
+    provDemoKnapp: 'Try demo account',
   },
   app: {
     tittel: 'Timeplan - teacher workload planner',
