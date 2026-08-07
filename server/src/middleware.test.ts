@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Request, Response } from 'express'
-import { kreverRolle } from './middleware.js'
+
+vi.mock('./seedDemo.js', () => ({ demoTenantId: 'demo-tenant' }))
+
+const { kreverRolle, blokkerDemoSkriving } = await import('./middleware.js')
 
 function lagRes() {
   const res = {
@@ -44,5 +47,33 @@ describe('kreverRolle', () => {
     kreverRolle('superadmin')(req, res, next)
     expect(next).not.toHaveBeenCalled()
     expect(res.statusCode).toBe(403)
+  })
+})
+describe('blokkerDemoSkriving', () => {
+  it('slipper gjennom lesing (GET) fra demo-tenanten', () => {
+    const req = { method: 'GET', bruker: { brukerId: '1', tenantId: 'demo-tenant', rolle: 'avdelingsleder' } } as unknown as Request
+    const res = lagRes()
+    const next = vi.fn()
+    blokkerDemoSkriving(req, res, next)
+    expect(next).toHaveBeenCalledOnce()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('blokkerer skriving (POST) fra demo-tenanten', () => {
+    const req = { method: 'POST', bruker: { brukerId: '1', tenantId: 'demo-tenant', rolle: 'avdelingsleder' } } as unknown as Request
+    const res = lagRes()
+    const next = vi.fn()
+    blokkerDemoSkriving(req, res, next)
+    expect(next).not.toHaveBeenCalled()
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('slipper gjennom skriving fra en annen tenant', () => {
+    const req = { method: 'PUT', bruker: { brukerId: '1', tenantId: 'annen-tenant', rolle: 'avdelingsleder' } } as unknown as Request
+    const res = lagRes()
+    const next = vi.fn()
+    blokkerDemoSkriving(req, res, next)
+    expect(next).toHaveBeenCalledOnce()
+    expect(res.statusCode).toBe(200)
   })
 })

@@ -110,7 +110,14 @@ authRuter.post('/login', async (req, res) => {
     tidspunkt: new Date().toISOString(),
     ip: req.ip ?? 'ukjent',
   })
-  res.json({ navn: bruker.navn, rolle: bruker.rolle, laererId: bruker.laererId })
+  const tenant = bruker.tenantId ? await hentTenantById(bruker.tenantId) : undefined
+  res.json({
+    navn: bruker.navn,
+    rolle: bruker.rolle,
+    laererId: bruker.laererId,
+    lisensstatus: tenant?.lisensstatus,
+    proveperiodeSlutt: tenant?.proveperiodeSlutt,
+  })
 })
 
 authRuter.post('/logout', (_req, res) => {

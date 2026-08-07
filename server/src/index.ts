@@ -11,7 +11,7 @@ import { brukereRuter } from './routes/brukere.js'
 import { adminRuter } from './routes/admin.js'
 import { betalingRuter } from './routes/betaling.js'
 import { tilbakemeldingerRuter } from './routes/tilbakemeldinger.js'
-import { autentiser, kreverAktivLisens } from './middleware.js'
+import { autentiser, blokkerDemoSkriving, kreverAktivLisens } from './middleware.js'
 import { APP_URL } from './stripe.js'
 import { seedDemoKonto } from './seedDemo.js'
 
@@ -30,8 +30,8 @@ app.use(express.json({ limit: '2mb' }))
 app.use(cookieParser())
 
 app.use('/api/auth', authRuter)
-app.use('/api/skoledata', autentiser, kreverAktivLisens, skoledataRuter)
-app.use('/api/brukere', autentiser, kreverAktivLisens, brukereRuter)
+app.use('/api/skoledata', autentiser, blokkerDemoSkriving, kreverAktivLisens, skoledataRuter)
+app.use('/api/brukere', autentiser, blokkerDemoSkriving, kreverAktivLisens, brukereRuter)
 app.use('/api/tilbakemeldinger', tilbakemeldingerRuter)
 app.use('/api/betaling', betalingRuter)
 app.use('/api/admin', adminRuter)

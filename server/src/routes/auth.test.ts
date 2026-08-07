@@ -105,13 +105,14 @@ describe('POST /api/auth/login', () => {
     const bruker = await lagBruker({ brukernavn: 'login.suksess' })
     vi.mocked(store.finnBrukerVedBrukernavn).mockResolvedValue(bruker)
     vi.mocked(store.loggInnlogging).mockResolvedValue(undefined)
+    vi.mocked(store.hentTenantById).mockResolvedValue(lagTenant())
 
     const svar = await request(lagApp())
       .post('/api/auth/login')
       .send({ brukernavn: 'login.suksess', passord: 'riktigPassord123' })
 
     expect(svar.status).toBe(200)
-    expect(svar.body).toMatchObject({ navn: bruker.navn, rolle: bruker.rolle })
+    expect(svar.body).toMatchObject({ navn: bruker.navn, rolle: bruker.rolle, lisensstatus: 'proveperiode' })
     expect(svar.headers['set-cookie']?.[0]).toMatch(/^token=/)
   })
 

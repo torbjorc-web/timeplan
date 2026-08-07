@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 import { verifiserToken } from './auth.js'
 import { harGyldigLisens, hentTenantById } from './store.js'
+import { demoTenantId } from './seedDemo.js'
 import type { Rolle } from './types.js'
 
 declare global {
@@ -35,6 +36,17 @@ export function kreverRolle(...roller: Rolle[]) {
     }
     next()
   }
+}
+
+const SKRIVE_METODER = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+/** Demo-passordet ligger i klartekst i repoet (offentlig), så demo-avdelingen skrivebeskyttes server-side mot ødeleggelse. */
+export function blokkerDemoSkriving(req: Request, res: Response, next: NextFunction): void {
+  if (SKRIVE_METODER.has(req.method) && req.bruker?.tenantId === demoTenantId) {
+    res.status(403).json({ feil: 'Demo-avdelingen er skrivebeskyttet - endringer lagres ikke.' })
+    return
+  }
+  next()
 }
 
 /** Blokkerer tenant-scopede ruter når prøveperioden er utløpt eller avdelingen er sperret. Superadmin er unntatt (har ingen tenant). */

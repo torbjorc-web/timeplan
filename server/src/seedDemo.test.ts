@@ -8,7 +8,8 @@ vi.mock('./store.js', () => ({
 }))
 
 const store = await import('./store.js')
-const { seedDemoKonto, DEMO_BRUKERNAVN } = await import('./seedDemo.js')
+const seedDemoModul = await import('./seedDemo.js')
+const { seedDemoKonto, DEMO_BRUKERNAVN } = seedDemoModul
 
 function lagTenant(): Tenant {
   return {
@@ -35,6 +36,7 @@ describe('seedDemoKonto', () => {
     expect(store.leggTilBruker).toHaveBeenCalledWith(
       expect.objectContaining({ brukernavn: DEMO_BRUKERNAVN, rolle: 'avdelingsleder' }),
     )
+    expect(seedDemoModul.demoTenantId).toBe('demo-tenant')
   })
 
   it('gjør ingenting hvis demo-brukeren allerede finnes', async () => {
@@ -52,5 +54,6 @@ describe('seedDemoKonto', () => {
 
     expect(store.opprettTenant).not.toHaveBeenCalled()
     expect(store.leggTilBruker).not.toHaveBeenCalled()
+    expect(seedDemoModul.demoTenantId).toBe('demo-tenant')
   })
 })
