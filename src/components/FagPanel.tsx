@@ -1,11 +1,13 @@
 import type { PanelProps } from './PanelProps'
 import { uuid } from '../defaults'
 import type { Fag, FagType } from '../types'
-import { FAGTYPE_LABELS } from '../types'
+import { useI18n } from '../i18n/I18nContext'
 
 const FAGTYPER: FagType[] = ['teoretisk', 'praktisk-estetisk', 'kroppsoving', 'valgfag', 'annet']
 
 export function FagPanel({ data, setData }: PanelProps) {
+  const { t } = useI18n()
+
   function oppdaterFag(id: string, endring: Partial<Fag>) {
     setData((d) => ({ ...d, fag: d.fag.map((f) => (f.id === id ? { ...f, ...endring } : f)) }))
   }
@@ -27,20 +29,16 @@ export function FagPanel({ data, setData }: PanelProps) {
 
   return (
     <div className="panel">
-      <h2>Fag</h2>
-      <p className="hjelpetekst">
-        Delingstall er maks antall elever per gruppe. Praktisk-estetiske fag (musikk, mat og helse, kunst og
-        håndverk) bør ha lavere delingstall enn teoretiske fag. Kroppsøving kan kobles sammen med valgfag slik at
-        gruppestørrelsen beregnes ut fra elevtallet samlet, uten dobbelttelling av ressurs.
-      </p>
+      <h2>{t.fag.heading}</h2>
+      <p className="hjelpetekst">{t.fag.hjelpetekst}</p>
       <table className="tabell">
         <thead>
           <tr>
-            <th>Navn</th>
-            <th>Type</th>
-            <th>Timer/uke</th>
-            <th>Delingstall</th>
-            <th>Deles med</th>
+            <th>{t.fag.kolonner.navn}</th>
+            <th>{t.fag.kolonner.type}</th>
+            <th>{t.fag.kolonner.timerUke}</th>
+            <th>{t.fag.kolonner.delingstall}</th>
+            <th>{t.fag.kolonner.delesMed}</th>
             <th></th>
           </tr>
         </thead>
@@ -52,9 +50,9 @@ export function FagPanel({ data, setData }: PanelProps) {
               </td>
               <td>
                 <select value={f.type} onChange={(e) => oppdaterFag(f.id, { type: e.target.value as FagType })}>
-                  {FAGTYPER.map((t) => (
-                    <option key={t} value={t}>
-                      {FAGTYPE_LABELS[t]}
+                  {FAGTYPER.map((type) => (
+                    <option key={type} value={type}>
+                      {t.fagtype[type]}
                     </option>
                   ))}
                 </select>
@@ -81,7 +79,7 @@ export function FagPanel({ data, setData }: PanelProps) {
                   value={f.kobletFagId ?? ''}
                   onChange={(e) => oppdaterFag(f.id, { kobletFagId: e.target.value || undefined })}
                 >
-                  <option value="">-</option>
+                  <option value="">{t.common.dash}</option>
                   {data.fag
                     .filter((other) => other.id !== f.id)
                     .map((other) => (
@@ -93,14 +91,14 @@ export function FagPanel({ data, setData }: PanelProps) {
               </td>
               <td>
                 <button className="knapp-faresone" onClick={() => slettFag(f.id)}>
-                  Slett
+                  {t.fag.slett}
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <button onClick={leggTilFag}>+ Legg til fag</button>
+      <button onClick={leggTilFag}>{t.fag.leggTil}</button>
     </div>
   )
 }

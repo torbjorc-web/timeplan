@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { apiPost, ApiFeil } from '../api'
+import { useI18n } from '../i18n/I18nContext'
 
 export function TilbakemeldingBoks() {
+  const { t } = useI18n()
   const [melding, setMelding] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [feilmelding, setFeilmelding] = useState<string | null>(null)
@@ -11,16 +13,16 @@ export function TilbakemeldingBoks() {
     setFeilmelding(null)
     setStatus(null)
     if (melding.trim().length < 3) {
-      setFeilmelding('Skriv en litt lengre melding (minst 3 tegn).')
+      setFeilmelding(t.feil.meldingForKort)
       return
     }
     setSender(true)
     try {
       await apiPost('/tilbakemeldinger', { melding })
       setMelding('')
-      setStatus('Takk! Meldingen din er sendt.')
+      setStatus(t.tilbakemelding.takk)
     } catch (e) {
-      setFeilmelding(e instanceof ApiFeil ? e.message : 'Kunne ikke sende meldingen.')
+      setFeilmelding(e instanceof ApiFeil ? e.message : t.feil.sendeMelding)
     } finally {
       setSender(false)
     }
@@ -28,22 +30,20 @@ export function TilbakemeldingBoks() {
 
   return (
     <section className="panel">
-      <h2>Tilbakemelding / ønsker</h2>
-      <p className="hjelpetekst">
-        Send ønsker, spørsmål eller tilbakemelding om appen direkte til oss. Vi leser alt som kommer inn.
-      </p>
+      <h2>{t.tilbakemelding.heading}</h2>
+      <p className="hjelpetekst">{t.tilbakemelding.hjelpetekst}</p>
       {feilmelding && <p className="advarsel">⚠ {feilmelding}</p>}
       {status && <p>{status}</p>}
       <textarea
         rows={5}
         value={melding}
         onChange={(e) => setMelding(e.target.value)}
-        placeholder="Skriv meldingen din her..."
+        placeholder={t.tilbakemelding.placeholder}
         style={{ width: '100%' }}
       />
       <div className="knapperad">
         <button onClick={send} disabled={sender}>
-          Send
+          {t.tilbakemelding.send}
         </button>
       </div>
     </section>

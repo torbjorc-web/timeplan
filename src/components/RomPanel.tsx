@@ -1,8 +1,11 @@
 import type { PanelProps } from './PanelProps'
 import { uuid } from '../defaults'
 import type { Rom } from '../types'
+import { useI18n } from '../i18n/I18nContext'
 
 export function RomPanel({ data, setData }: PanelProps) {
+  const { t } = useI18n()
+
   function oppdaterRom(id: string, endring: Partial<Rom>) {
     setData((d) => ({ ...d, rom: d.rom.map((r) => (r.id === id ? { ...r, ...endring } : r)) }))
   }
@@ -22,17 +25,14 @@ export function RomPanel({ data, setData }: PanelProps) {
 
   return (
     <div className="panel">
-      <h2>Rom</h2>
-      <p className="hjelpetekst">
-        Kryss av «kan ikke deles» for spesialrom (sløyd, kjøkken, musikkrom, gymsal o.l.) som bare kan brukes av
-        én gruppe om gangen. Timeplanen varsler da automatisk ved dobbeltbooking av rommet.
-      </p>
+      <h2>{t.rom.heading}</h2>
+      <p className="hjelpetekst">{t.rom.hjelpetekst}</p>
       <table className="tabell">
         <thead>
           <tr>
-            <th>Navn</th>
-            <th>Kan ikke deles</th>
-            <th>Merknad</th>
+            <th>{t.rom.kolonner.navn}</th>
+            <th>{t.rom.kolonner.kanIkkeDeles}</th>
+            <th>{t.rom.kolonner.merknad}</th>
             <th></th>
           </tr>
         </thead>
@@ -54,14 +54,14 @@ export function RomPanel({ data, setData }: PanelProps) {
               </td>
               <td>
                 <button className="knapp-faresone" onClick={() => slettRom(r.id)}>
-                  Slett
+                  {t.rom.slett}
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <button onClick={leggTilRom}>+ Legg til rom</button>
+      <button onClick={leggTilRom}>{t.rom.leggTil}</button>
     </div>
   )
 }

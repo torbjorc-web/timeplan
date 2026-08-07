@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiPost, ApiFeil } from '../api'
 import { useAuth } from '../AuthContext'
+import { useI18n } from '../i18n/I18nContext'
+import type { Sprak } from '../i18n/I18nContext'
 
 interface TenantMedStatus {
   id: string
@@ -29,18 +31,13 @@ interface TilbakemeldingMedTenant {
   tidspunkt: string
 }
 
-const LISENS_LABELS: Record<TenantMedStatus['lisensstatus'], string> = {
-  proveperiode: 'Prøveperiode',
-  aktiv: 'Aktiv lisens',
-  sperret: 'Sperret',
-}
-
-function formatDato(iso: string): string {
-  return new Date(iso).toLocaleString('nb-NO')
+function formatDato(iso: string, sprak: Sprak): string {
+  return new Date(iso).toLocaleString(sprak === 'en' ? 'en-GB' : 'nb-NO')
 }
 
 export function AdminPanel() {
   const { loggUt } = useAuth()
+  const { t, sprak } = useI18n()
   const [tenants, setTenants] = useState<TenantMedStatus[]>([])
   const [innlogginger, setInnlogginger] = useState<Innloggingsoppforing[]>([])
   const [tilbakemeldinger, setTilbakemeldinger] = useState<TilbakemeldingMedTenant[]>([])
@@ -52,12 +49,12 @@ export function AdminPanel() {
       apiGet<Innloggingsoppforing[]>('/admin/innlogginger'),
       apiGet<TilbakemeldingMedTenant[]>('/admin/tilbakemeldinger'),
     ])
-      .then(([t, i, f]) => {
-        setTenants(t)
-        setInnlogginger(i)
-        setTilbakemeldinger(f)
+      .then(([tenantListe, innloggingListe, tilbakemeldingListe]) => {
+        setTenants(tenantListe)
+        setInnlogginger(innloggingListe)
+        setTilbakemeldinger(tilbakemeldingListe)
       })
-      .catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : 'Kunne ikke laste admin-data.'))
+      .catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : t.feil.lasteAdminData))
   }
 
   useEffect(lastInn, [])
@@ -67,52 +64,52 @@ export function AdminPanel() {
       await apiPost(`/admin/tenants/${id}/${handling}`)
       lastInn()
     } catch (e) {
-      setFeilmelding(e instanceof ApiFeil ? e.message : 'Kunne ikke oppdatere lisens.')
+      setFeilmelding(e instanceof ApiFeil ? e.message : t.feil.oppdatereLisens)
     }
   }
 
   return (
     <div className="app-skall">
       <header className="topplinje">
-        <strong>Superadmin</strong>
-        <button onClick={() => loggUt()}>Logg ut</button>
+        <strong>{t.admin.heading}</strong>
+        <button onClick={() => loggUt()}>{t.common.logout}</button>
       </header>
 
       <main>
         {feilmelding && <p className="advarsel">⚠ {feilmelding}</p>}
 
         <section className="panel delseksjon">
-          <h2>Skoler / avdelinger</h2>
+          <h2>{t.admin.skolerHeading}</h2>
           <table className="tabell">
             <thead>
               <tr>
-                <th>Navn</th>
-                <th>Opprettet</th>
-                <th>Lisens</th>
-                <th>Prøveperiode slutt</th>
-                <th>Brukere</th>
-                <th>Handling</th>
+                <th>{t.admin.kolonner.navn}</th>
+                <th>{t.admin.kolonner.opprettet}</th>
+                <th>{t.admin.kolonner.lisens}</th>
+                <th>{t.admin.kolonner.proveperiodeSlutt}</th>
+                <th>{t.admin.kolonner.brukere}</th>
+                <th>{t.admin.kolonner.handling}</th>
               </tr>
             </thead>
             <tbody>
-              {tenants.map((t) => (
-                <tr key={t.id}>
-                  <td>{t.navn}</td>
-                  <td>{formatDato(t.opprettet)}</td>
-                  <td>{LISENS_LABELS[t.lisensstatus]}</td>
-                  <td>{formatDato(t.proveperiodeSlutt)}</td>
-                  <td className="sentrert">{t.antallBrukere}</td>
+              {tenants.map((tenant) => (
+                <tr key={tenant.id}>
+                  <td>{tenant.navn}</td>
+                  <td>{formatDato(tenant.opprettet, sprak)}</td>
+                  <td>{t.lisens[tenant.lisensstatus]}</td>
+                  <td>{formatDato(tenant.proveperiodeSlutt, sprak)}</td>
+                  <td className="sentrert">{tenant.antallBrukere}</td>
                   <td className="knapperad">
-                    <button onClick={() => endreLisens(t.id, 'frigi')}>Frigi (aktiver)</button>
-                    <button className="knapp-faresone" onClick={() => endreLisens(t.id, 'sperr')}>
-                      Sperr
+                    <button onClick={() => endreLisens(tenant.id, 'frigi')}>{t.admin.frigi}</button>
+                    <button className="knapp-faresone" onClick={() => endreLisens(tenant.id, 'sperr')}>
+                      {t.admin.sperr}
                     </button>
                   </td>
                 </tr>
               ))}
               {tenants.length === 0 && (
                 <tr>
-                  <td colSpan={6}>Ingen skoler registrert enda.</td>
+                  <td colSpan={6}>{t.admin.ingenSkoler}</td>
                 </tr>
               )}
             </tbody>
@@ -120,22 +117,22 @@ export function AdminPanel() {
         </section>
 
         <section className="panel delseksjon">
-          <h2>Innlogginger ({innlogginger.length})</h2>
+          <h2>{t.admin.innloggingerHeading(innlogginger.length)}</h2>
           <table className="tabell">
             <thead>
               <tr>
-                <th>Tidspunkt</th>
-                <th>Navn</th>
-                <th>Brukernavn</th>
-                <th>Rolle</th>
-                <th>Skole</th>
-                <th>IP</th>
+                <th>{t.admin.innloggingerKolonner.tidspunkt}</th>
+                <th>{t.admin.innloggingerKolonner.navn}</th>
+                <th>{t.admin.innloggingerKolonner.brukernavn}</th>
+                <th>{t.admin.innloggingerKolonner.rolle}</th>
+                <th>{t.admin.innloggingerKolonner.skole}</th>
+                <th>{t.admin.innloggingerKolonner.ip}</th>
               </tr>
             </thead>
             <tbody>
               {innlogginger.map((i) => (
                 <tr key={i.id}>
-                  <td>{formatDato(i.tidspunkt)}</td>
+                  <td>{formatDato(i.tidspunkt, sprak)}</td>
                   <td>{i.navn}</td>
                   <td>{i.brukernavn}</td>
                   <td>{i.rolle}</td>
@@ -145,7 +142,7 @@ export function AdminPanel() {
               ))}
               {innlogginger.length === 0 && (
                 <tr>
-                  <td colSpan={6}>Ingen innlogginger registrert enda.</td>
+                  <td colSpan={6}>{t.admin.ingenInnlogginger}</td>
                 </tr>
               )}
             </tbody>
@@ -153,15 +150,15 @@ export function AdminPanel() {
         </section>
 
         <section className="panel delseksjon">
-          <h2>Tilbakemeldinger fra skoler</h2>
-          {tilbakemeldinger.length === 0 && <p className="hjelpetekst">Ingen tilbakemeldinger enda.</p>}
-          {tilbakemeldinger.map((t) => (
-            <div key={t.id} className="detaljboks">
+          <h2>{t.admin.tilbakemeldingerHeading}</h2>
+          {tilbakemeldinger.length === 0 && <p className="hjelpetekst">{t.admin.ingenTilbakemeldinger}</p>}
+          {tilbakemeldinger.map((tb) => (
+            <div key={tb.id} className="detaljboks">
               <strong>
-                {t.tenantNavn} - {t.brukerNavn}
+                {tb.tenantNavn} - {tb.brukerNavn}
               </strong>
-              <p className="hjelpetekst">{formatDato(t.tidspunkt)}</p>
-              <p>{t.melding}</p>
+              <p className="hjelpetekst">{formatDato(tb.tidspunkt, sprak)}</p>
+              <p>{tb.melding}</p>
             </div>
           ))}
         </section>

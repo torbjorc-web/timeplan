@@ -1,13 +1,19 @@
 import { useState } from 'react'
 import { useAuth, ApiFeil } from '../AuthContext'
+import { useI18n } from '../i18n/I18nContext'
+import type { Regelverk } from '../types'
+
+export const REGELVERK_VALG_NOKKEL = 'timeplan-regelverk-valg'
 
 export function InnloggingPanel() {
   const { loggInn, registrerAvdeling } = useAuth()
+  const { t, sprak, setSprak } = useI18n()
   const [visRegistrering, setVisRegistrering] = useState(false)
   const [brukernavn, setBrukernavn] = useState('')
   const [passord, setPassord] = useState('')
   const [avdelingNavn, setAvdelingNavn] = useState('')
   const [navn, setNavn] = useState('')
+  const [regelverk, setRegelverk] = useState<Regelverk>('arsramme')
   const [feilmelding, setFeilmelding] = useState<string | null>(null)
   const [laster, setLaster] = useState(false)
 
@@ -18,7 +24,7 @@ export function InnloggingPanel() {
     try {
       await loggInn(brukernavn, passord)
     } catch (err) {
-      setFeilmelding(err instanceof ApiFeil ? err.message : 'Innlogging feilet.')
+      setFeilmelding(err instanceof ApiFeil ? err.message : t.feil.loginFeilet)
     } finally {
       setLaster(false)
     }
@@ -29,9 +35,11 @@ export function InnloggingPanel() {
     setFeilmelding(null)
     setLaster(true)
     try {
+      // Lagres midlertidig og brukes til å seede standardoppsettet for den nye avdelingen ved første innlogging.
+      localStorage.setItem(REGELVERK_VALG_NOKKEL, regelverk)
       await registrerAvdeling(avdelingNavn, brukernavn, passord, navn)
     } catch (err) {
-      setFeilmelding(err instanceof ApiFeil ? err.message : 'Registrering feilet.')
+      setFeilmelding(err instanceof ApiFeil ? err.message : t.feil.registreringFeilet)
     } finally {
       setLaster(false)
     }
@@ -40,16 +48,24 @@ export function InnloggingPanel() {
   return (
     <div className="innlogging-side">
       <div className="innlogging-boks">
-        <h1>Timeplan - SFS 2213</h1>
+        <div className="knapperad" style={{ justifyContent: 'flex-end' }}>
+          <button type="button" className={sprak === 'nb' ? 'fane-aktiv' : ''} onClick={() => setSprak('nb')}>
+            {t.sprakVelger.nb}
+          </button>
+          <button type="button" className={sprak === 'en' ? 'fane-aktiv' : ''} onClick={() => setSprak('en')}>
+            {t.sprakVelger.en}
+          </button>
+        </div>
+        <h1>{t.login.appTittel}</h1>
         {!visRegistrering ? (
           <form onSubmit={handleLogin}>
-            <h2>Logg inn</h2>
+            <h2>{t.login.loggInnHeading}</h2>
             <label>
-              Brukernavn
+              {t.login.brukernavn}
               <input value={brukernavn} onChange={(e) => setBrukernavn(e.target.value)} autoComplete="username" required />
             </label>
             <label>
-              Passord
+              {t.login.passord}
               <input
                 type="password"
                 value={passord}
@@ -60,30 +76,30 @@ export function InnloggingPanel() {
             </label>
             {feilmelding && <p className="advarsel">⚠ {feilmelding}</p>}
             <button type="submit" disabled={laster}>
-              {laster ? 'Logger inn...' : 'Logg inn'}
+              {laster ? t.login.loggerInnKnapp : t.login.loggInnKnapp}
             </button>
             <button type="button" className="knapp-lenke" onClick={() => setVisRegistrering(true)}>
-              Ny avdeling? Registrer her
+              {t.login.registrerLenke}
             </button>
           </form>
         ) : (
           <form onSubmit={handleRegistrer}>
-            <h2>Registrer ny avdeling</h2>
-            <p className="hjelpetekst">Oppretter en ny, adskilt avdeling med deg som avdelingsleder.</p>
+            <h2>{t.login.registrerHeading}</h2>
+            <p className="hjelpetekst">{t.login.registrerHjelpetekst}</p>
             <label>
-              Avdelings-/skolenavn
+              {t.login.avdelingNavn}
               <input value={avdelingNavn} onChange={(e) => setAvdelingNavn(e.target.value)} required />
             </label>
             <label>
-              Ditt navn
+              {t.login.dittNavn}
               <input value={navn} onChange={(e) => setNavn(e.target.value)} required />
             </label>
             <label>
-              Brukernavn
+              {t.login.brukernavn}
               <input value={brukernavn} onChange={(e) => setBrukernavn(e.target.value)} autoComplete="username" required />
             </label>
             <label>
-              Passord (minst 8 tegn)
+              {t.login.passordMinLengde}
               <input
                 type="password"
                 value={passord}
@@ -93,12 +109,19 @@ export function InnloggingPanel() {
                 required
               />
             </label>
+            <label>
+              {t.innstillinger.regelverkHeading}
+              <select value={regelverk} onChange={(e) => setRegelverk(e.target.value as Regelverk)}>
+                <option value="arsramme">{t.regelverk.arsramme}</option>
+                <option value="leseplikt_uke">{t.regelverk.leseplikt_uke}</option>
+              </select>
+            </label>
             {feilmelding && <p className="advarsel">⚠ {feilmelding}</p>}
             <button type="submit" disabled={laster}>
-              {laster ? 'Oppretter...' : 'Opprett avdeling'}
+              {laster ? t.login.oppretterKnapp : t.login.opprettKnapp}
             </button>
             <button type="button" className="knapp-lenke" onClick={() => setVisRegistrering(false)}>
-              Har du allerede en konto? Logg inn
+              {t.login.harKontoLenke}
             </button>
           </form>
         )}

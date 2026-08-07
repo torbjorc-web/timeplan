@@ -1,8 +1,10 @@
 import type { PanelProps } from './PanelProps'
 import { DAGER } from '../types'
 import { lastNedCsv, timeplanCsvRader } from '../utils/csvExport'
+import { useI18n } from '../i18n/I18nContext'
 
 export function TimeplanVisning({ data }: PanelProps) {
+  const { t } = useI18n()
   const oekter = Array.from({ length: data.antallOekterPerDag }, (_, i) => i + 1)
 
   function eksporterCsv() {
@@ -25,8 +27,8 @@ export function TimeplanVisning({ data }: PanelProps) {
   return (
     <div className="panel">
       <div className="mellom-topp">
-        <h2>Timeplan</h2>
-        <button onClick={eksporterCsv}>Last ned CSV</button>
+        <h2>{t.timeplan.headingVisning}</h2>
+        <button onClick={eksporterCsv}>{t.timeplan.lastNedCsv}</button>
       </div>
       <table className="tabell timeplan-tabell">
         <thead>
@@ -40,7 +42,7 @@ export function TimeplanVisning({ data }: PanelProps) {
         <tbody>
           {oekter.map((o) => (
             <tr key={o}>
-              <td className="oekt-nr">Time {o}</td>
+              <td className="oekt-nr">{t.timeplan.time(o)}</td>
               {DAGER.map((d) => {
                 const oppforinger = data.timeplan.filter((x) => x.dag === d && x.oekt === o)
                 return (

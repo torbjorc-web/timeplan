@@ -17,7 +17,9 @@ import { LisensBanner } from './components/LisensBanner'
 import { TilbakemeldingBoks } from './components/TilbakemeldingBoks'
 import { lastInnData, lagreData } from './storage'
 import { opprettStandardAppData, opprettTomtSkoleData } from './defaults'
-import type { AppData, SkoleData } from './types'
+import type { AppData, Regelverk, SkoleData } from './types'
+import { useI18n } from './i18n/I18nContext'
+import { REGELVERK_VALG_NOKKEL } from './components/InnloggingPanel'
 import './App.css'
 
 type Fane =
@@ -34,6 +36,7 @@ type Fane =
 
 function AppInnhold() {
   const { bruker, laster, loggUt } = useAuth()
+  const { t } = useI18n()
   const [appData, setAppData] = useState<AppData | null>(null)
   const [feilmelding, setFeilmelding] = useState<string | null>(null)
   const [fane, setFane] = useState<Fane>('aarsplan')
@@ -42,14 +45,22 @@ function AppInnhold() {
     if (!bruker || bruker.rolle === 'superadmin') return
     lastInnData()
       // Helt ny avdeling har ingen skoledata lagret ennå - fyll inn standardoppsett så siden ikke låser seg på "Laster data...".
-      .then((d) => setAppData(!d.aktivtSkoleaar || !d.skoleaar[d.aktivtSkoleaar] ? opprettStandardAppData() : d))
-      .catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : 'Kunne ikke laste data fra serveren.'))
-  }, [bruker])
+      .then((d) => {
+        if (!d.aktivtSkoleaar || !d.skoleaar[d.aktivtSkoleaar]) {
+          const regelverkValg = localStorage.getItem(REGELVERK_VALG_NOKKEL) as Regelverk | null
+          localStorage.removeItem(REGELVERK_VALG_NOKKEL)
+          setAppData(opprettStandardAppData(regelverkValg ?? undefined))
+        } else {
+          setAppData(d)
+        }
+      })
+      .catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : t.feil.lasteData))
+  }, [bruker, t])
 
   useEffect(() => {
     if (!appData || bruker?.rolle !== 'avdelingsleder') return
-    lagreData(appData).catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : 'Kunne ikke lagre endringer til serveren.'))
-  }, [appData, bruker])
+    lagreData(appData).catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : t.feil.lagreData))
+  }, [appData, bruker, t])
 
   const skoleData: SkoleData | null = useMemo(() => {
     if (!appData) return null
@@ -75,50 +86,51 @@ function AppInnhold() {
       const tall = Number(start)
       return Number.isFinite(tall) ? `${tall + 1}/${tall + 2}` : ''
     })()
-    const nyttAar = window.prompt('Nytt skoleår (f.eks. 2026/2027):', forslag)
+    const nyttAar = window.prompt(t.app.nyttSkoleaarPrompt(forslag), forslag)
     if (!nyttAar) return
     setAppData((d) => {
       if (!d || d.skoleaar[nyttAar]) return d
+      const gjeldendeRegelverk = d.skoleaar[d.aktivtSkoleaar]?.innstillinger.regelverk
       return {
         ...d,
         aktivtSkoleaar: nyttAar,
-        skoleaar: { ...d.skoleaar, [nyttAar]: opprettTomtSkoleData(nyttAar) },
+        skoleaar: { ...d.skoleaar, [nyttAar]: opprettTomtSkoleData(nyttAar, gjeldendeRegelverk) },
       }
     })
   }
 
-  if (laster) return <div className="senter-melding">Laster...</div>
+  if (laster) return <div className="senter-melding">{t.common.loading}</div>
   if (!bruker) return <InnloggingPanel />
   if (bruker.rolle === 'superadmin') return <AdminPanel />
-  if (!appData || !skoleData) return <div className="senter-melding">Laster data...</div>
+  if (!appData || !skoleData) return <div className="senter-melding">{t.common.loadingData}</div>
 
   const panelProps = { data: skoleData, setData: setSkoleData }
 
   const faneKnapper: { id: Fane; navn: string }[] =
     bruker.rolle === 'avdelingsleder'
       ? [
-          { id: 'innstillinger', navn: 'Innstillinger' },
-          { id: 'fag', navn: 'Fag' },
-          { id: 'rom', navn: 'Rom' },
-          { id: 'klasser', navn: 'Klasser' },
-          { id: 'laerere', navn: 'Lærere' },
-          { id: 'brukere', navn: 'Brukere' },
-          { id: 'fagfordeling', navn: 'Fagfordeling' },
-          { id: 'aarsplan', navn: 'Årsplan' },
-          { id: 'timeplan', navn: 'Timeplan' },
-          { id: 'tilbakemelding', navn: 'Tilbakemelding' },
+          { id: 'innstillinger', navn: t.app.tabs.innstillinger },
+          { id: 'fag', navn: t.app.tabs.fag },
+          { id: 'rom', navn: t.app.tabs.rom },
+          { id: 'klasser', navn: t.app.tabs.klasser },
+          { id: 'laerere', navn: t.app.tabs.laerere },
+          { id: 'brukere', navn: t.app.tabs.brukere },
+          { id: 'fagfordeling', navn: t.app.tabs.fagfordeling },
+          { id: 'aarsplan', navn: t.app.tabs.aarsplan },
+          { id: 'timeplan', navn: t.app.tabs.timeplan },
+          { id: 'tilbakemelding', navn: t.app.tabs.tilbakemelding },
         ]
       : [
-          { id: 'fagfordeling', navn: 'Fagfordeling' },
-          { id: 'aarsplan', navn: bruker.rolle === 'laerer' ? 'Min årsplan' : 'Årsplan' },
-          { id: 'timeplan', navn: bruker.rolle === 'laerer' ? 'Min timeplan' : 'Timeplan' },
+          { id: 'fagfordeling', navn: t.app.tabs.fagfordeling },
+          { id: 'aarsplan', navn: bruker.rolle === 'laerer' ? t.app.tabs.minAarsplan : t.app.tabs.aarsplan },
+          { id: 'timeplan', navn: bruker.rolle === 'laerer' ? t.app.tabs.minTimeplan : t.app.tabs.timeplan },
         ]
 
   return (
     <div className="app-skall">
       <header className="topplinje">
         <div>
-          <strong>Timeplan - SFS 2213</strong>
+          <strong>{t.app.tittel}</strong>
           {appData.aktivtSkoleaar && <span className="skoleaar-tag"> {appData.aktivtSkoleaar}</span>}
         </div>
         <div className="topplinje-hoyre">
@@ -131,13 +143,11 @@ function AppInnhold() {
                   </option>
                 ))}
               </select>
-              <button onClick={leggTilSkoleaar}>+ Nytt skoleår</button>
+              <button onClick={leggTilSkoleaar}>{t.app.nyttSkoleaarKnapp}</button>
             </>
           )}
-          <span>
-            {bruker.navn} ({bruker.rolle})
-          </span>
-          <button onClick={() => loggUt()}>Logg ut</button>
+          <span>{t.app.brukerVisning(bruker.navn, bruker.rolle)}</span>
+          <button onClick={() => loggUt()}>{t.common.logout}</button>
         </div>
       </header>
 

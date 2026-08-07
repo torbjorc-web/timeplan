@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { apiPost, ApiFeil } from '../api'
 import type { Bruker } from '../AuthContext'
+import { useI18n } from '../i18n/I18nContext'
 
 function dagerIgjen(proveperiodeSlutt: string): number {
   const ms = new Date(proveperiodeSlutt).getTime() - Date.now()
@@ -8,6 +9,7 @@ function dagerIgjen(proveperiodeSlutt: string): number {
 }
 
 export function LisensBanner({ bruker }: { bruker: Bruker }) {
+  const { t } = useI18n()
   const [feilmelding, setFeilmelding] = useState<string | null>(null)
   const [laster, setLaster] = useState(false)
 
@@ -20,7 +22,7 @@ export function LisensBanner({ bruker }: { bruker: Bruker }) {
       const { url } = await apiPost<{ url: string }>('/betaling/opprett-checkout')
       window.location.href = url
     } catch (e) {
-      setFeilmelding(e instanceof ApiFeil ? e.message : 'Kunne ikke starte betaling.')
+      setFeilmelding(e instanceof ApiFeil ? e.message : t.feil.startBetaling)
       setLaster(false)
     }
   }
@@ -30,13 +32,9 @@ export function LisensBanner({ bruker }: { bruker: Bruker }) {
 
   return (
     <div className={sperret ? 'advarsel' : 'hjelpetekst'} style={{ padding: '8px 20px' }}>
-      {sperret ? (
-        <>⚠ Lisensen er sperret. Kjøp lisens for å få tilgang igjen.</>
-      ) : (
-        <>Prøveperiode: {dager} dag(er) igjen. </>
-      )}{' '}
+      {sperret ? <>{t.lisensBanner.sperretTekst}</> : <>{t.lisensBanner.proveperiodeTekst(dager)} </>}{' '}
       <button onClick={kjopLisens} disabled={laster}>
-        Kjøp lisens
+        {t.lisensBanner.kjopLisens}
       </button>
       {feilmelding && <span className="advarsel"> {feilmelding}</span>}
     </div>

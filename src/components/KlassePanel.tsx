@@ -1,11 +1,13 @@
 import type { PanelProps } from './PanelProps'
 import { uuid } from '../defaults'
 import type { Klasse, Trinn } from '../types'
-import { TRINN_LABELS } from '../types'
+import { useI18n } from '../i18n/I18nContext'
 
 const TRINN_LISTE: Trinn[] = ['barnetrinn', 'ungdomstrinn', 'videregaende']
 
 export function KlassePanel({ data, setData }: PanelProps) {
+  const { t } = useI18n()
+
   function oppdaterKlasse(id: string, endring: Partial<Klasse>) {
     setData((d) => ({ ...d, klasser: d.klasser.map((k) => (k.id === id ? { ...k, ...endring } : k)) }))
   }
@@ -25,13 +27,13 @@ export function KlassePanel({ data, setData }: PanelProps) {
 
   return (
     <div className="panel">
-      <h2>Klasser / grupper</h2>
+      <h2>{t.klasse.heading}</h2>
       <table className="tabell">
         <thead>
           <tr>
-            <th>Navn</th>
-            <th>Trinn</th>
-            <th>Elevtall</th>
+            <th>{t.klasse.kolonner.navn}</th>
+            <th>{t.klasse.kolonner.trinn}</th>
+            <th>{t.klasse.kolonner.elevtall}</th>
             <th></th>
           </tr>
         </thead>
@@ -43,9 +45,9 @@ export function KlassePanel({ data, setData }: PanelProps) {
               </td>
               <td>
                 <select value={k.trinn} onChange={(e) => oppdaterKlasse(k.id, { trinn: e.target.value as Trinn })}>
-                  {TRINN_LISTE.map((t) => (
-                    <option key={t} value={t}>
-                      {TRINN_LABELS[t]}
+                  {TRINN_LISTE.map((trinn) => (
+                    <option key={trinn} value={trinn}>
+                      {t.trinn[trinn]}
                     </option>
                   ))}
                 </select>
@@ -60,14 +62,14 @@ export function KlassePanel({ data, setData }: PanelProps) {
               </td>
               <td>
                 <button className="knapp-faresone" onClick={() => slettKlasse(k.id)}>
-                  Slett
+                  {t.klasse.slett}
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <button onClick={leggTilKlasse}>+ Legg til klasse</button>
+      <button onClick={leggTilKlasse}>{t.klasse.leggTil}</button>
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { apiDelete, apiGet, apiPost, ApiFeil } from '../api'
 import type { PanelProps } from './PanelProps'
 import type { Rolle } from '../types'
-import { TRINN_LABELS } from '../types'
+import { useI18n } from '../i18n/I18nContext'
 
 interface BrukerVisning {
   id: string
@@ -12,17 +12,11 @@ interface BrukerVisning {
   laererId?: string
 }
 
-const ROLLE_LABELS: Record<Rolle, string> = {
-  avdelingsleder: 'Avdelingsleder',
-  laerer: 'Lærer (kun lese egen plan)',
-  rektor: 'Rektor (kun lese alt)',
-  superadmin: 'Superadmin',
-}
-
 /** Avdelingsleder kan kun opprette disse rollene selv - superadmin opprettes via eget script. */
 const OPPRETTBARE_ROLLER: Rolle[] = ['laerer', 'rektor', 'avdelingsleder']
 
 export function BrukerePanel({ data }: PanelProps) {
+  const { t } = useI18n()
   const [brukere, setBrukere] = useState<BrukerVisning[]>([])
   const [navn, setNavn] = useState('')
   const [brukernavn, setBrukernavn] = useState('')
@@ -54,7 +48,7 @@ export function BrukerePanel({ data }: PanelProps) {
       setLaererId('')
       lastBrukere()
     } catch (err) {
-      setFeilmelding(err instanceof ApiFeil ? err.message : 'Kunne ikke opprette bruker.')
+      setFeilmelding(err instanceof ApiFeil ? err.message : t.feil.opprettBruker)
     }
   }
 
@@ -65,17 +59,14 @@ export function BrukerePanel({ data }: PanelProps) {
 
   return (
     <div className="panel">
-      <h2>Brukere</h2>
-      <p className="hjelpetekst">
-        Opprett innlogging for lærere (leser kun sin egen årsplan/timeplan) og rektor (leser alt, kan ikke
-        redigere).
-      </p>
+      <h2>{t.brukere.heading}</h2>
+      <p className="hjelpetekst">{t.brukere.hjelpetekst}</p>
       <table className="tabell">
         <thead>
           <tr>
-            <th>Navn</th>
-            <th>Brukernavn</th>
-            <th>Rolle</th>
+            <th>{t.brukere.kolonner.navn}</th>
+            <th>{t.brukere.kolonner.brukernavn}</th>
+            <th>{t.brukere.kolonner.rolle}</th>
             <th></th>
           </tr>
         </thead>
@@ -84,11 +75,11 @@ export function BrukerePanel({ data }: PanelProps) {
             <tr key={b.id}>
               <td>{b.navn}</td>
               <td>{b.brukernavn}</td>
-              <td>{ROLLE_LABELS[b.rolle]}</td>
+              <td>{t.rolle[b.rolle]}</td>
               <td>
                 {b.rolle !== 'avdelingsleder' && (
                   <button className="knapp-faresone" onClick={() => slett(b.id)}>
-                    Slett
+                    {t.brukere.slett}
                   </button>
                 )}
               </td>
@@ -97,13 +88,18 @@ export function BrukerePanel({ data }: PanelProps) {
         </tbody>
       </table>
 
-      <h3>Ny bruker</h3>
+      <h3>{t.brukere.nyBruker}</h3>
       <form onSubmit={opprettBruker} className="skjema-rad">
-        <input placeholder="Navn" value={navn} onChange={(e) => setNavn(e.target.value)} required />
-        <input placeholder="Brukernavn" value={brukernavn} onChange={(e) => setBrukernavn(e.target.value)} required />
+        <input placeholder={t.brukere.navnPlaceholder} value={navn} onChange={(e) => setNavn(e.target.value)} required />
+        <input
+          placeholder={t.brukere.brukernavnPlaceholder}
+          value={brukernavn}
+          onChange={(e) => setBrukernavn(e.target.value)}
+          required
+        />
         <input
           type="password"
-          placeholder="Passord (min. 8 tegn)"
+          placeholder={t.brukere.passordPlaceholder}
           value={passord}
           onChange={(e) => setPassord(e.target.value)}
           minLength={8}
@@ -112,21 +108,21 @@ export function BrukerePanel({ data }: PanelProps) {
         <select value={rolle} onChange={(e) => setRolle(e.target.value as Rolle)}>
           {OPPRETTBARE_ROLLER.map((r) => (
             <option key={r} value={r}>
-              {ROLLE_LABELS[r]}
+              {t.rolle[r]}
             </option>
           ))}
         </select>
         {rolle === 'laerer' && (
           <select value={laererId} onChange={(e) => setLaererId(e.target.value)} required>
-            <option value="">Velg lærer-record</option>
+            <option value="">{t.brukere.velgLaererRecord}</option>
             {data.laerere.map((l) => (
               <option key={l.id} value={l.id}>
-                {l.navn} ({TRINN_LABELS[l.trinn]})
+                {l.navn} ({t.trinn[l.trinn]})
               </option>
             ))}
           </select>
         )}
-        <button type="submit">+ Opprett bruker</button>
+        <button type="submit">{t.brukere.opprettKnapp}</button>
       </form>
       {feilmelding && <p className="advarsel">⚠ {feilmelding}</p>}
     </div>

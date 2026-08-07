@@ -5,8 +5,10 @@ import type { Dag } from '../types'
 import { DAGER } from '../types'
 import { finnKonflikter, type Konflikt } from '../utils/calculations'
 import { lastNedCsv, timeplanCsvRader } from '../utils/csvExport'
+import { useI18n } from '../i18n/I18nContext'
 
 export function TimeplanPanel({ data, setData }: PanelProps) {
+  const { t } = useI18n()
   const [dag, setDag] = useState<Dag>('Mandag')
   const [oekt, setOekt] = useState(1)
   const [fagId, setFagId] = useState('')
@@ -58,13 +60,12 @@ export function TimeplanPanel({ data, setData }: PanelProps) {
   return (
     <div className="panel">
       <div className="mellom-topp">
-        <h2>Timeplan (ukeplan)</h2>
-        <button onClick={() => lastNedCsv(`timeplan-${data.skoleaar}.csv`, timeplanCsvRader(data))}>Last ned CSV</button>
+        <h2>{t.timeplan.heading}</h2>
+        <button onClick={() => lastNedCsv(`timeplan-${data.skoleaar}.csv`, timeplanCsvRader(data))}>
+          {t.timeplan.lastNedCsv}
+        </button>
       </div>
-      <p className="hjelpetekst">
-        Legg til undervisningsøkter i rutenettet under. Appen varsler dersom lærer, klasse eller et spesialrom
-        (rom merket «kan ikke deles») allerede er booket i samme time.
-      </p>
+      <p className="hjelpetekst">{t.timeplan.hjelpetekst}</p>
 
       <div className="skjema-rad">
         <select value={dag} onChange={(e) => setDag(e.target.value as Dag)}>
@@ -77,12 +78,12 @@ export function TimeplanPanel({ data, setData }: PanelProps) {
         <select value={oekt} onChange={(e) => setOekt(Number(e.target.value))}>
           {oekter.map((o) => (
             <option key={o} value={o}>
-              Time {o}
+              {t.timeplan.time(o)}
             </option>
           ))}
         </select>
         <select value={fagId} onChange={(e) => setFagId(e.target.value)}>
-          <option value="">Velg fag</option>
+          <option value="">{t.timeplan.velgFag}</option>
           {data.fag.map((f) => (
             <option key={f.id} value={f.id}>
               {f.navn}
@@ -90,7 +91,7 @@ export function TimeplanPanel({ data, setData }: PanelProps) {
           ))}
         </select>
         <select value={klasseId} onChange={(e) => setKlasseId(e.target.value)}>
-          <option value="">Velg klasse</option>
+          <option value="">{t.timeplan.velgKlasse}</option>
           {data.klasser.map((k) => (
             <option key={k.id} value={k.id}>
               {k.navn}
@@ -98,7 +99,7 @@ export function TimeplanPanel({ data, setData }: PanelProps) {
           ))}
         </select>
         <select value={laererId} onChange={(e) => setLaererId(e.target.value)}>
-          <option value="">Velg lærer</option>
+          <option value="">{t.timeplan.velgLaerer}</option>
           {data.laerere.map((l) => (
             <option key={l.id} value={l.id}>
               {l.navn}
@@ -106,28 +107,28 @@ export function TimeplanPanel({ data, setData }: PanelProps) {
           ))}
         </select>
         <select value={romId} onChange={(e) => setRomId(e.target.value)}>
-          <option value="">Velg rom (valgfritt)</option>
+          <option value="">{t.timeplan.velgRomValgfritt}</option>
           {data.rom.map((r) => (
             <option key={r.id} value={r.id}>
               {r.navn}
-              {r.kanIkkeDeles ? ' (spesialrom)' : ''}
+              {r.kanIkkeDeles ? t.timeplan.spesialromSuffiks : ''}
             </option>
           ))}
         </select>
-        <button onClick={() => leggTil(false)}>+ Legg til time</button>
+        <button onClick={() => leggTil(false)}>{t.timeplan.leggTilTime}</button>
       </div>
 
       {ventendeKonflikter && (
         <div className="konfliktboks">
-          <p>⚠ Konflikt oppdaget:</p>
+          <p>{t.timeplan.konfliktOppdaget}</p>
           <ul>
             {ventendeKonflikter.map((k, i) => (
               <li key={i}>{k.melding}</li>
             ))}
           </ul>
           <div className="knapperad">
-            <button onClick={() => leggTil(true)}>Legg til likevel</button>
-            <button onClick={() => setVentendeKonflikter(null)}>Avbryt</button>
+            <button onClick={() => leggTil(true)}>{t.timeplan.leggTilLikevel}</button>
+            <button onClick={() => setVentendeKonflikter(null)}>{t.timeplan.avbryt}</button>
           </div>
         </div>
       )}
@@ -144,7 +145,7 @@ export function TimeplanPanel({ data, setData }: PanelProps) {
         <tbody>
           {oekter.map((o) => (
             <tr key={o}>
-              <td className="oekt-nr">Time {o}</td>
+              <td className="oekt-nr">{t.timeplan.time(o)}</td>
               {DAGER.map((d) => {
                 const oppforinger = data.timeplan.filter((x) => x.dag === d && x.oekt === o)
                 return (
@@ -158,7 +159,7 @@ export function TimeplanPanel({ data, setData }: PanelProps) {
                         <div>{navnLaerer(x.laererId)}</div>
                         {x.romId && <div>{navnRom(x.romId)}</div>}
                         <button className="knapp-liten knapp-faresone" onClick={() => slettOppforing(x.id)}>
-                          Slett
+                          {t.timeplan.slett}
                         </button>
                       </div>
                     ))}

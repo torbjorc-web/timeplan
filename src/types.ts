@@ -95,8 +95,24 @@ export interface TrinnInnstilling {
   annenBundetTidPerAar: number
 }
 
+/**
+ * Hvilken modell skolen bruker for å beregne lærernes undervisningsplikt:
+ * - 'arsramme': fullt årsverk fordeles på undervisning/annen bundet tid/ubundet tid (SFS 2213-stil).
+ * - 'leseplikt_uke': fast undervisningstimetall per uke (vanlig internasjonal modell), sammenlignet mot faktisk timeplan.
+ */
+export type Regelverk = 'arsramme' | 'leseplikt_uke'
+
+export interface LeseplikttInnstilling {
+  /** Maks undervisningstimer (klokketimer) per uke ved 100% stilling ("leseplikt"). */
+  leseplikttimerUke: number
+  /** Lengde på en undervisningsøkt/time i minutter - brukes bare til visning/omregning. */
+  timeLengdeMinutter: number
+}
+
 export interface Innstillinger {
+  regelverk: Regelverk
   trinnInnstillinger: Record<Trinn, TrinnInnstilling>
+  leseplikttInnstillinger: Record<Trinn, LeseplikttInnstilling>
   seniorRegler: SeniorRegel[]
   /** Standard delingstall (gruppestørrelse) per fagtype - kan overstyres per fag. */
   delingstallStandard: Record<FagType, number>

@@ -1,4 +1,15 @@
-import type { Dag, Fag, Justering, Klasse, Laerer, SeniorRegel, TimeplanOppforing, Trinn, TrinnInnstilling } from '../types'
+import type {
+  Dag,
+  Fag,
+  Justering,
+  Klasse,
+  Laerer,
+  LeseplikttInnstilling,
+  SeniorRegel,
+  TimeplanOppforing,
+  Trinn,
+  TrinnInnstilling,
+} from '../types'
 
 export function grupperNoedvendig(elevtall: number, delingstall: number): number {
   if (delingstall <= 0) return 1
@@ -120,6 +131,46 @@ export function beregnLaererAarsplan(laerer: Laerer, innstilling: TrinnInnstilli
     advarsler.push('Ubundet tid blir negativ - undervisning + annen bundet tid overstiger årsverket.')
   }
   return { totalArsverkTimer, grunnUndervisning, sumJusteringer, undervisning, annenBundetTid, ubundetTid, advarsler }
+}
+
+export interface LaererLeseplikt {
+  leseplikttimerUke: number
+  sumJusteringerUke: number
+  undervisningPaakrevdUke: number
+  undervisningFaktiskUke: number
+  differanseUke: number
+  advarsler: string[]
+}
+
+/**
+ * Beregner ukentlig undervisningsplikt for "leseplikt_uke"-modellen (vanlig internasjonal modell):
+ * et fast undervisningstimetall per uke, sammenlignet mot lærerens faktiske timeplan.
+ * Justeringer er lagret som klokketimer/år (samme felt som årsramme-modellen) og regnes om til per uke.
+ */
+export function beregnLaererLeseplikt(
+  laerer: Laerer,
+  innstilling: LeseplikttInnstilling,
+  arbeidsukerIAaret: number,
+  timeplan: TimeplanOppforing[],
+): LaererLeseplikt {
+  const andel = laerer.stillingsprosent / 100
+  const leseplikttimerUke = andel * innstilling.leseplikttimerUke
+  const sumJusteringerAar = summerJusteringer(laerer.justeringer)
+  const sumJusteringerUke = arbeidsukerIAaret > 0 ? sumJusteringerAar / arbeidsukerIAaret : 0
+  const undervisningPaakrevdUke = Math.max(0, leseplikttimerUke - sumJusteringerUke)
+  const undervisningFaktiskUke = timeplan.filter((o) => o.laererId === laerer.id).length * (innstilling.timeLengdeMinutter / 60)
+  const differanseUke = undervisningPaakrevdUke - undervisningFaktiskUke
+
+  const advarsler: string[] = []
+  if (leseplikttimerUke - sumJusteringerUke < 0) {
+    advarsler.push('Summen av justeringer/reduksjoner er større enn leseplikten per uke.')
+  }
+  if (differanseUke < -0.01) {
+    advarsler.push('Læreren er satt opp med flere undervisningstimer per uke enn leseplikten tilsier.')
+  } else if (differanseUke > 0.01) {
+    advarsler.push('Læreren er satt opp med færre undervisningstimer per uke enn leseplikten tilsier.')
+  }
+  return { leseplikttimerUke, sumJusteringerUke, undervisningPaakrevdUke, undervisningFaktiskUke, differanseUke, advarsler }
 }
 
 export interface Konflikt {

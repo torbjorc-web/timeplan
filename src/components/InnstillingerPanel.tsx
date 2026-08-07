@@ -1,12 +1,19 @@
 import type { PanelProps } from './PanelProps'
 import { uuid } from '../defaults'
-import type { FagType, SeniorRegel, Trinn, TrinnInnstilling } from '../types'
-import { FAGTYPE_LABELS, TRINN_LABELS } from '../types'
+import type { FagType, LeseplikttInnstilling, Regelverk, SeniorRegel, Trinn, TrinnInnstilling } from '../types'
+import { useI18n } from '../i18n/I18nContext'
 
 const TRINN_LISTE: Trinn[] = ['barnetrinn', 'ungdomstrinn', 'videregaende']
 const FAGTYPER: FagType[] = ['teoretisk', 'praktisk-estetisk', 'kroppsoving', 'valgfag', 'annet']
+const REGELVERK_LISTE: Regelverk[] = ['arsramme', 'leseplikt_uke']
 
 export function InnstillingerPanel({ data, setData }: PanelProps) {
+  const { t } = useI18n()
+
+  function oppdaterRegelverk(regelverk: Regelverk) {
+    setData((d) => ({ ...d, innstillinger: { ...d.innstillinger, regelverk } }))
+  }
+
   function oppdaterTrinnInnstilling(trinn: Trinn, endring: Partial<TrinnInnstilling>) {
     setData((d) => ({
       ...d,
@@ -15,6 +22,19 @@ export function InnstillingerPanel({ data, setData }: PanelProps) {
         trinnInnstillinger: {
           ...d.innstillinger.trinnInnstillinger,
           [trinn]: { ...d.innstillinger.trinnInnstillinger[trinn], ...endring },
+        },
+      },
+    }))
+  }
+
+  function oppdaterLeseplikttInnstilling(trinn: Trinn, endring: Partial<LeseplikttInnstilling>) {
+    setData((d) => ({
+      ...d,
+      innstillinger: {
+        ...d.innstillinger,
+        leseplikttInnstillinger: {
+          ...d.innstillinger.leseplikttInnstillinger,
+          [trinn]: { ...d.innstillinger.leseplikttInnstillinger[trinn], ...endring },
         },
       },
     }))
@@ -58,83 +78,130 @@ export function InnstillingerPanel({ data, setData }: PanelProps) {
     }))
   }
 
+  const regelverk = data.innstillinger.regelverk
+
   return (
     <div className="panel">
-      <h2>Innstillinger</h2>
-      <p className="hjelpetekst advarsel">
-        Alle tall under er <strong>eksempelverdier</strong>, ikke fasit fra tariffavtalen. SFS 2213-tallene endres
-        ved hvert hovedoppgjør og kan variere lokalt - kontroller og juster mot gjeldende avtaletekst.
-      </p>
+      <h2>{t.innstillinger.heading}</h2>
+      <p className="hjelpetekst advarsel">{t.innstillinger.advarselTekst}</p>
 
-      <h3>Arbeidsår og undervisningsrammer per trinn</h3>
-      <table className="tabell">
-        <thead>
-          <tr>
-            <th>Trinn</th>
-            <th>Årsverk (timer, 100%)</th>
-            <th>Arbeidsuker/år</th>
-            <th>Undervisningsramme (timer, 100%)</th>
-            <th>Annen bundet tid (timer/år, 100%)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {TRINN_LISTE.map((trinn) => {
-            const i = data.innstillinger.trinnInnstillinger[trinn]
-            return (
-              <tr key={trinn}>
-                <td>{TRINN_LABELS[trinn]}</td>
-                <td>
-                  <input
-                    type="number"
-                    value={i.arsverkTimerFullStilling}
-                    onChange={(e) => oppdaterTrinnInnstilling(trinn, { arsverkTimerFullStilling: Number(e.target.value) })}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={i.arbeidsukerIAaret}
-                    onChange={(e) => oppdaterTrinnInnstilling(trinn, { arbeidsukerIAaret: Number(e.target.value) })}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={i.undervisningsrammeFullStilling}
-                    onChange={(e) =>
-                      oppdaterTrinnInnstilling(trinn, { undervisningsrammeFullStilling: Number(e.target.value) })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={i.annenBundetTidPerAar}
-                    onChange={(e) => oppdaterTrinnInnstilling(trinn, { annenBundetTidPerAar: Number(e.target.value) })}
-                  />
-                </td>
+      <h3>{t.innstillinger.regelverkHeading}</h3>
+      <p className="hjelpetekst">{t.innstillinger.regelverkHjelpetekst}</p>
+      <select value={regelverk} onChange={(e) => oppdaterRegelverk(e.target.value as Regelverk)}>
+        {REGELVERK_LISTE.map((r) => (
+          <option key={r} value={r}>
+            {t.regelverk[r]}
+          </option>
+        ))}
+      </select>
+
+      {regelverk === 'arsramme' ? (
+        <>
+          <h3>{t.innstillinger.arsrammeHeading}</h3>
+          <table className="tabell">
+            <thead>
+              <tr>
+                <th>{t.innstillinger.kolonner.trinn}</th>
+                <th>{t.innstillinger.kolonner.arsverkTimer}</th>
+                <th>{t.innstillinger.kolonner.arbeidsuker}</th>
+                <th>{t.innstillinger.kolonner.undervisningsramme}</th>
+                <th>{t.innstillinger.kolonner.annenBundetTid}</th>
               </tr>
-            )
-          })}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {TRINN_LISTE.map((trinn) => {
+                const i = data.innstillinger.trinnInnstillinger[trinn]
+                return (
+                  <tr key={trinn}>
+                    <td>{t.trinn[trinn]}</td>
+                    <td>
+                      <input
+                        type="number"
+                        value={i.arsverkTimerFullStilling}
+                        onChange={(e) => oppdaterTrinnInnstilling(trinn, { arsverkTimerFullStilling: Number(e.target.value) })}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={i.arbeidsukerIAaret}
+                        onChange={(e) => oppdaterTrinnInnstilling(trinn, { arbeidsukerIAaret: Number(e.target.value) })}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={i.undervisningsrammeFullStilling}
+                        onChange={(e) =>
+                          oppdaterTrinnInnstilling(trinn, { undervisningsrammeFullStilling: Number(e.target.value) })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={i.annenBundetTidPerAar}
+                        onChange={(e) => oppdaterTrinnInnstilling(trinn, { annenBundetTidPerAar: Number(e.target.value) })}
+                      />
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </>
+      ) : (
+        <>
+          <h3>{t.innstillinger.leseplikttHeading}</h3>
+          <table className="tabell">
+            <thead>
+              <tr>
+                <th>{t.innstillinger.kolonner.trinn}</th>
+                <th>{t.innstillinger.kolonner.leseplikttimerUke}</th>
+                <th>{t.innstillinger.kolonner.timeLengde}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {TRINN_LISTE.map((trinn) => {
+                const i = data.innstillinger.leseplikttInnstillinger[trinn]
+                return (
+                  <tr key={trinn}>
+                    <td>{t.trinn[trinn]}</td>
+                    <td>
+                      <input
+                        type="number"
+                        value={i.leseplikttimerUke}
+                        onChange={(e) => oppdaterLeseplikttInnstilling(trinn, { leseplikttimerUke: Number(e.target.value) })}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={i.timeLengdeMinutter}
+                        onChange={(e) => oppdaterLeseplikttInnstilling(trinn, { timeLengdeMinutter: Number(e.target.value) })}
+                      />
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </>
+      )}
 
-      <h3>Standard delingstall (gruppestørrelse) per fagtype</h3>
-      <p className="hjelpetekst">
-        Brukes som forslag når nye fag opprettes. Praktiske/estetiske fag bør ha lavere delingstall enn teoretiske
-        fag, siden gruppene av naturlige/sikkerhetsmessige grunner må være mindre.
-      </p>
+      <h3>{t.innstillinger.delingstallHeading}</h3>
+      <p className="hjelpetekst">{t.innstillinger.delingstallHjelpetekst}</p>
       <table className="tabell">
         <thead>
           <tr>
-            <th>Fagtype</th>
-            <th>Delingstall</th>
+            <th>{t.innstillinger.delingstallKolonner.fagtype}</th>
+            <th>{t.innstillinger.delingstallKolonner.delingstall}</th>
           </tr>
         </thead>
         <tbody>
           {FAGTYPER.map((type) => (
             <tr key={type}>
-              <td>{FAGTYPE_LABELS[type]}</td>
+              <td>{t.fagtype[type]}</td>
               <td>
                 <input
                   type="number"
@@ -148,16 +215,13 @@ export function InnstillingerPanel({ data, setData }: PanelProps) {
         </tbody>
       </table>
 
-      <h3>Seniortiltak</h3>
-      <p className="hjelpetekst">
-        Aldersbaserte reduksjoner i undervisningstid, ofte avtalt lokalt. Legg inn trinnene deres her - de brukes
-        som forslag på lærerens side ut fra fødselsår.
-      </p>
+      <h3>{t.innstillinger.seniorHeading}</h3>
+      <p className="hjelpetekst">{t.innstillinger.seniorHjelpetekst}</p>
       <table className="tabell">
         <thead>
           <tr>
-            <th>Fra alder</th>
-            <th>Reduksjon (timer/år)</th>
+            <th>{t.innstillinger.seniorKolonner.fraAlder}</th>
+            <th>{t.innstillinger.seniorKolonner.reduksjon}</th>
             <th></th>
           </tr>
         </thead>
@@ -183,14 +247,14 @@ export function InnstillingerPanel({ data, setData }: PanelProps) {
                 </td>
                 <td>
                   <button className="knapp-faresone" onClick={() => slettSeniorRegel(r.id)}>
-                    Slett
+                    {t.innstillinger.slett}
                   </button>
                 </td>
               </tr>
             ))}
         </tbody>
       </table>
-      <button onClick={leggTilSeniorRegel}>+ Legg til seniorregel</button>
+      <button onClick={leggTilSeniorRegel}>{t.innstillinger.leggTilSeniorregel}</button>
     </div>
   )
 }

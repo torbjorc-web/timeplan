@@ -2,13 +2,23 @@ import { describe, expect, it } from 'vitest'
 import {
   beregnFagbehovForTrinn,
   beregnLaererAarsplan,
+  beregnLaererLeseplikt,
   finnKonflikter,
   foreslaSeniorReduksjon,
   formatTimer,
   grupperNoedvendig,
   summerJusteringer,
 } from './calculations'
-import type { Fag, Justering, Klasse, Laerer, SeniorRegel, TimeplanOppforing, TrinnInnstilling } from '../types'
+import type {
+  Fag,
+  Justering,
+  Klasse,
+  Laerer,
+  LeseplikttInnstilling,
+  SeniorRegel,
+  TimeplanOppforing,
+  TrinnInnstilling,
+} from '../types'
 
 describe('grupperNoedvendig', () => {
   it('runder opp til nærmeste hele gruppe', () => {
@@ -123,6 +133,55 @@ describe('beregnLaererAarsplan', () => {
     const plan = beregnLaererAarsplan(laerer, innstilling)
     expect(plan.undervisning).toBe(0)
     expect(plan.advarsler.length).toBeGreaterThan(0)
+  })
+})
+
+describe('beregnLaererLeseplikt', () => {
+  const leseplikt: LeseplikttInnstilling = { leseplikttimerUke: 20, timeLengdeMinutter: 60 }
+
+  it('beregner påkrevd og faktisk undervisning for full stilling uten justeringer og uten timeplan', () => {
+    const laerer: Laerer = { id: 'l1', navn: 'Test', trinn: 'ungdomstrinn', stillingsprosent: 100, justeringer: [] }
+    const plan = beregnLaererLeseplikt(laerer, leseplikt, 39, [])
+    expect(plan.leseplikttimerUke).toBe(20)
+    expect(plan.undervisningPaakrevdUke).toBe(20)
+    expect(plan.undervisningFaktiskUke).toBe(0)
+    expect(plan.differanseUke).toBe(20)
+    expect(plan.advarsler.length).toBeGreaterThan(0) // for lite planlagt
+  })
+
+  it('skalerer leseplikt med stillingsprosent', () => {
+    const laerer: Laerer = { id: 'l1', navn: 'Test', trinn: 'ungdomstrinn', stillingsprosent: 50, justeringer: [] }
+    const plan = beregnLaererLeseplikt(laerer, leseplikt, 39, [])
+    expect(plan.leseplikttimerUke).toBe(10)
+  })
+
+  it('regner om årlige justeringer til ukentlig reduksjon', () => {
+    const laerer: Laerer = {
+      id: 'l1',
+      navn: 'Test',
+      trinn: 'ungdomstrinn',
+      stillingsprosent: 100,
+      justeringer: [{ id: 'j1', type: 'kontaktlaerer', timerPerAar: 39 }],
+    }
+    const plan = beregnLaererLeseplikt(laerer, leseplikt, 39, [])
+    expect(plan.sumJusteringerUke).toBe(1) // 39t/år / 39 uker = 1t/uke
+    expect(plan.undervisningPaakrevdUke).toBe(19)
+  })
+
+  it('teller faktisk timeplan for læreren og varsler ved overbooking', () => {
+    const laerer: Laerer = { id: 'l1', navn: 'Test', trinn: 'ungdomstrinn', stillingsprosent: 100, justeringer: [] }
+    const timeplan: TimeplanOppforing[] = Array.from({ length: 25 }, (_, i) => ({
+      id: `o${i}`,
+      dag: 'Mandag',
+      oekt: i + 1,
+      fagId: 'f',
+      klasseId: 'k',
+      laererId: 'l1',
+    }))
+    const plan = beregnLaererLeseplikt(laerer, leseplikt, 39, timeplan)
+    expect(plan.undervisningFaktiskUke).toBe(25) // 25 økter * 60 min / 60
+    expect(plan.differanseUke).toBe(-5)
+    expect(plan.advarsler.some((a) => a.includes('flere'))).toBe(true)
   })
 })
 

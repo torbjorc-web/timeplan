@@ -2,13 +2,14 @@ import { useState } from 'react'
 import type { PanelProps } from './PanelProps'
 import { uuid } from '../defaults'
 import type { Justering, JusteringType, Laerer, Trinn } from '../types'
-import { JUSTERING_LABELS, TRINN_LABELS } from '../types'
 import { foreslaSeniorReduksjon } from '../utils/calculations'
+import { useI18n } from '../i18n/I18nContext'
 
 const TRINN_LISTE: Trinn[] = ['barnetrinn', 'ungdomstrinn', 'videregaende']
 const JUSTERINGSTYPER: JusteringType[] = ['kontaktlaerer', 'tillitsvalgt', 'seniortiltak', 'annet']
 
 export function LaererPanel({ data, setData }: PanelProps) {
+  const { t } = useI18n()
   const [valgtId, setValgtId] = useState<string | null>(null)
   const valgtLaerer = data.laerere.find((l) => l.id === valgtId) ?? null
 
@@ -54,14 +55,14 @@ export function LaererPanel({ data, setData }: PanelProps) {
 
   return (
     <div className="panel">
-      <h2>Lærere</h2>
+      <h2>{t.laerer.heading}</h2>
       <table className="tabell">
         <thead>
           <tr>
-            <th>Navn</th>
-            <th>Trinn</th>
-            <th>Stilling %</th>
-            <th>Fødselsår</th>
+            <th>{t.laerer.kolonner.navn}</th>
+            <th>{t.laerer.kolonner.trinn}</th>
+            <th>{t.laerer.kolonner.stillingProsent}</th>
+            <th>{t.laerer.kolonner.fodselsaar}</th>
             <th></th>
           </tr>
         </thead>
@@ -73,9 +74,9 @@ export function LaererPanel({ data, setData }: PanelProps) {
               </td>
               <td>
                 <select value={l.trinn} onChange={(e) => oppdaterLaerer(l.id, { trinn: e.target.value as Trinn })}>
-                  {TRINN_LISTE.map((t) => (
-                    <option key={t} value={t}>
-                      {TRINN_LABELS[t]}
+                  {TRINN_LISTE.map((trinn) => (
+                    <option key={trinn} value={trinn}>
+                      {t.trinn[trinn]}
                     </option>
                   ))}
                 </select>
@@ -92,38 +93,35 @@ export function LaererPanel({ data, setData }: PanelProps) {
               <td>
                 <input
                   type="number"
-                  placeholder="f.eks. 1975"
+                  placeholder={t.laerer.fodselsaarPlaceholder}
                   value={l.fodselsaar ?? ''}
                   onChange={(e) => oppdaterLaerer(l.id, { fodselsaar: e.target.value ? Number(e.target.value) : undefined })}
                 />
               </td>
               <td className="knapperad">
                 <button onClick={() => setValgtId(l.id === valgtId ? null : l.id)}>
-                  {l.id === valgtId ? 'Lukk' : 'Justeringer'}
+                  {l.id === valgtId ? t.laerer.lukk : t.laerer.justeringer}
                 </button>
                 <button className="knapp-faresone" onClick={() => slettLaerer(l.id)}>
-                  Slett
+                  {t.laerer.slett}
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <button onClick={leggTilLaerer}>+ Legg til lærer</button>
+      <button onClick={leggTilLaerer}>{t.laerer.leggTil}</button>
 
       {valgtLaerer && (
         <div className="detaljboks">
-          <h3>Justeringer for {valgtLaerer.navn}</h3>
-          <p className="hjelpetekst">
-            Legg til reduksjon i undervisningstid for kontaktlærer, tillitsvalgt, seniortiltak eller annen grunn.
-            Timer trekkes fra beregnet undervisningstimetall i årsplanen.
-          </p>
+          <h3>{t.laerer.justeringerFor(valgtLaerer.navn)}</h3>
+          <p className="hjelpetekst">{t.laerer.justeringerHjelpetekst}</p>
           <table className="tabell">
             <thead>
               <tr>
-                <th>Type</th>
-                <th>Timer/år</th>
-                <th>Merknad</th>
+                <th>{t.laerer.justeringKolonner.type}</th>
+                <th>{t.laerer.justeringKolonner.timerAar}</th>
+                <th>{t.laerer.justeringKolonner.merknad}</th>
                 <th></th>
               </tr>
             </thead>
@@ -135,9 +133,9 @@ export function LaererPanel({ data, setData }: PanelProps) {
                       value={j.type}
                       onChange={(e) => oppdaterJustering(valgtLaerer, j.id, { type: e.target.value as JusteringType })}
                     >
-                      {JUSTERINGSTYPER.map((t) => (
-                        <option key={t} value={t}>
-                          {JUSTERING_LABELS[t]}
+                      {JUSTERINGSTYPER.map((type) => (
+                        <option key={type} value={type}>
+                          {t.justering[type]}
                         </option>
                       ))}
                     </select>
@@ -157,7 +155,7 @@ export function LaererPanel({ data, setData }: PanelProps) {
                   </td>
                   <td>
                     <button className="knapp-faresone" onClick={() => slettJustering(valgtLaerer, j.id)}>
-                      Slett
+                      {t.laerer.slett}
                     </button>
                   </td>
                 </tr>
@@ -165,8 +163,8 @@ export function LaererPanel({ data, setData }: PanelProps) {
             </tbody>
           </table>
           <div className="knapperad">
-            <button onClick={() => leggTilJustering(valgtLaerer, 'kontaktlaerer')}>+ Kontaktlærer</button>
-            <button onClick={() => leggTilJustering(valgtLaerer, 'tillitsvalgt')}>+ Tillitsvalgt</button>
+            <button onClick={() => leggTilJustering(valgtLaerer, 'kontaktlaerer')}>{t.laerer.leggTilKontaktlaerer}</button>
+            <button onClick={() => leggTilJustering(valgtLaerer, 'tillitsvalgt')}>{t.laerer.leggTilTillitsvalgt}</button>
             <button
               onClick={() => {
                 const alder = valgtLaerer.fodselsaar
@@ -176,9 +174,9 @@ export function LaererPanel({ data, setData }: PanelProps) {
                 leggTilJustering(valgtLaerer, 'seniortiltak', forslag)
               }}
             >
-              + Seniortiltak (forslag ut fra fødselsår)
+              {t.laerer.leggTilSeniortiltak}
             </button>
-            <button onClick={() => leggTilJustering(valgtLaerer, 'annet')}>+ Annet</button>
+            <button onClick={() => leggTilJustering(valgtLaerer, 'annet')}>{t.laerer.leggTilAnnet}</button>
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import type { AppData, Fag, FagType, Innstillinger, Rom, SkoleData, Trinn } from './types'
+import type { AppData, Fag, FagType, Innstillinger, Regelverk, Rom, SkoleData, Trinn } from './types'
 
 export function uuid(): string {
   return crypto.randomUUID()
@@ -9,7 +9,7 @@ export function uuid(): string {
  * SFS 2213-tallene endrer seg ved hvert hovedoppgjør og kan variere lokalt.
  * Kontroller og juster i "Innstillinger" mot gjeldende avtaletekst/PDF før bruk.
  */
-export function defaultInnstillinger(): Innstillinger {
+export function defaultInnstillinger(regelverk: Regelverk = 'arsramme'): Innstillinger {
   const trinnInnstillinger: Innstillinger['trinnInnstillinger'] = {
     barnetrinn: {
       arsverkTimerFullStilling: 1687.5,
@@ -31,6 +31,13 @@ export function defaultInnstillinger(): Innstillinger {
     },
   }
 
+  // Eksempelverdier for "leseplikt per uke" - vanlig internasjonal modell (f.eks. et fast antall 45-minutters økter/uke).
+  const leseplikttInnstillinger: Innstillinger['leseplikttInnstillinger'] = {
+    barnetrinn: { leseplikttimerUke: 19, timeLengdeMinutter: 45 },
+    ungdomstrinn: { leseplikttimerUke: 17, timeLengdeMinutter: 45 },
+    videregaende: { leseplikttimerUke: 16, timeLengdeMinutter: 60 },
+  }
+
   const delingstallStandard: Record<FagType, number> = {
     teoretisk: 30,
     'praktisk-estetisk': 15,
@@ -40,7 +47,9 @@ export function defaultInnstillinger(): Innstillinger {
   }
 
   return {
+    regelverk,
     trinnInnstillinger,
+    leseplikttInnstillinger,
     seniorRegler: [
       { id: uuid(), fraAlder: 55, reduksjonTimer: 38 },
       { id: uuid(), fraAlder: 60, reduksjonTimer: 76 },
@@ -81,11 +90,11 @@ export function defaultRom(): Rom[] {
   ]
 }
 
-export function opprettTomtSkoleData(skoleaar: string): SkoleData {
+export function opprettTomtSkoleData(skoleaar: string, regelverk?: Regelverk): SkoleData {
   return {
     skoleaar,
     antallOekterPerDag: 6,
-    innstillinger: defaultInnstillinger(),
+    innstillinger: defaultInnstillinger(regelverk),
     fag: defaultFag(),
     rom: defaultRom(),
     klasser: [],
@@ -98,12 +107,12 @@ export function defaultTrinnForNyLaerer(): Trinn {
   return 'barnetrinn'
 }
 
-export function opprettStandardAppData(): AppData {
+export function opprettStandardAppData(regelverk?: Regelverk): AppData {
   const now = new Date()
   const startAar = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1
   const skoleaar = `${startAar}/${startAar + 1}`
   return {
     aktivtSkoleaar: skoleaar,
-    skoleaar: { [skoleaar]: opprettTomtSkoleData(skoleaar) },
+    skoleaar: { [skoleaar]: opprettTomtSkoleData(skoleaar, regelverk) },
   }
 }

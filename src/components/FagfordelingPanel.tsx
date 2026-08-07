@@ -1,19 +1,16 @@
 import type { PanelProps } from './PanelProps'
 import type { Trinn } from '../types'
-import { TRINN_LABELS } from '../types'
 import { beregnFagbehovForTrinn, formatTimer } from '../utils/calculations'
+import { useI18n } from '../i18n/I18nContext'
 
 const TRINN_LISTE: Trinn[] = ['barnetrinn', 'ungdomstrinn', 'videregaende']
 
 export function FagfordelingPanel({ data }: PanelProps) {
+  const { t } = useI18n()
   return (
     <div className="panel">
-      <h2>Fagfordeling - beregnet gruppebehov</h2>
-      <p className="hjelpetekst">
-        Antall grupper beregnes ut fra samlet elevtall på trinnet delt på fagets delingstall (opprundet). Fag som
-        er koblet sammen (f.eks. kroppsøving + valgfag) bruker samlet elevtall og laveste delingstall, slik at
-        ressursen ikke telles dobbelt.
-      </p>
+      <h2>{t.fagfordeling.heading}</h2>
+      <p className="hjelpetekst">{t.fagfordeling.hjelpetekst}</p>
       {TRINN_LISTE.map((trinn) => {
         const arbeidsuker = data.innstillinger.trinnInnstillinger[trinn].arbeidsukerIAaret
         const behov = beregnFagbehovForTrinn(trinn, data.klasser, data.fag, arbeidsuker)
@@ -21,20 +18,20 @@ export function FagfordelingPanel({ data }: PanelProps) {
         return (
           <div key={trinn} className="delseksjon">
             <h3>
-              {TRINN_LABELS[trinn]} - {elevtall} elever totalt
+              {t.trinn[trinn]} - {t.fagfordeling.elevtallTotalt(elevtall)}
             </h3>
             {behov.length === 0 ? (
-              <p className="hjelpetekst">Ingen klasser registrert på dette trinnet ennå.</p>
+              <p className="hjelpetekst">{t.fagfordeling.ingenKlasser}</p>
             ) : (
               <table className="tabell">
                 <thead>
                   <tr>
-                    <th>Fag</th>
-                    <th>Delingstall brukt</th>
-                    <th>Grupper</th>
-                    <th>Timer/uke totalt</th>
-                    <th>Timer/år totalt</th>
-                    <th>Koblet med</th>
+                    <th>{t.fagfordeling.kolonner.fag}</th>
+                    <th>{t.fagfordeling.kolonner.delingstallBrukt}</th>
+                    <th>{t.fagfordeling.kolonner.grupper}</th>
+                    <th>{t.fagfordeling.kolonner.timerUke}</th>
+                    <th>{t.fagfordeling.kolonner.timerAar}</th>
+                    <th>{t.fagfordeling.kolonner.koblet}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -45,7 +42,7 @@ export function FagfordelingPanel({ data }: PanelProps) {
                       <td>{b.grupper}</td>
                       <td>{formatTimer(b.laerertimerPerUke)}</td>
                       <td>{formatTimer(b.laerertimerPerAar)}</td>
-                      <td>{b.koblet ?? '-'}</td>
+                      <td>{b.koblet ?? t.common.dash}</td>
                     </tr>
                   ))}
                 </tbody>
