@@ -15,9 +15,11 @@ import type { Bruker } from '../types.js'
 
 export const authRuter = Router()
 
+// I produksjon kan frontend ligge på en annen origin enn API-et (f.eks. Netlify + Render),
+// da må cookien være SameSite=None (krever secure: true). Lokalt er de samme site (localhost), så 'strict' holder.
 const COOKIE_INNSTILLINGER = {
   httpOnly: true,
-  sameSite: 'strict' as const,
+  sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'strict') as 'none' | 'strict',
   secure: process.env.NODE_ENV === 'production',
   maxAge: 12 * 60 * 60 * 1000,
 }

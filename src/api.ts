@@ -1,4 +1,6 @@
-const BASE = '/api'
+// VITE_API_URL peker mot backend-URLen (f.eks. Render) når frontend er på en annen origin (f.eks. Netlify).
+// Lokalt er den ubrukt - Vite sin dev-proxy videresender /api til localhost:3001 (se vite.config.ts).
+const BASE = `${import.meta.env.VITE_API_URL ?? ''}/api`
 
 export class ApiFeil extends Error {}
 

@@ -1,5 +1,6 @@
 import express from 'express'
 import cookieParser from 'cookie-parser'
+import cors from 'cors'
 import helmet from 'helmet'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -11,6 +12,7 @@ import { adminRuter } from './routes/admin.js'
 import { betalingRuter } from './routes/betaling.js'
 import { tilbakemeldingerRuter } from './routes/tilbakemeldinger.js'
 import { autentiser, kreverAktivLisens } from './middleware.js'
+import { APP_URL } from './stripe.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PORT = Number(process.env.PORT ?? 3001)
@@ -19,6 +21,8 @@ const KLIENT_DIST = join(__dirname, '..', '..', 'dist')
 const app = express()
 app.disable('x-powered-by')
 app.use(helmet())
+// Frontend kan kjøre på en annen origin (f.eks. Netlify) enn API-et (Render) - tillat den med cookies.
+app.use(cors({ origin: APP_URL, credentials: true }))
 // Stripe-webhook trenger rå body for signaturverifisering - må registreres FØR express.json().
 app.use('/api/betaling/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json({ limit: '2mb' }))
@@ -31,6 +35,9 @@ app.use('/api/tilbakemeldinger', tilbakemeldingerRuter)
 app.use('/api/betaling', betalingRuter)
 app.use('/api/admin', adminRuter)
 
+app.get('/api/helse', (req, res) => {
+  res.json({ status: 'ok' })
+})
 
 if (existsSync(KLIENT_DIST)) {
   app.use(express.static(KLIENT_DIST))

@@ -112,13 +112,20 @@ CI-jobbene kjører også `test:coverage` og laster opp HTML/LCOV-rapporten som e
 
 ## Deploy (live-demo)
 
-Appen er bygget som **én enkelt Node-tjeneste**: backend-serveren (`server/`) serverer både API-et og det ferdigbygde frontend-bundlet (`dist/`) på samme origin, så det er ikke nødvendig med separate frontend/backend-verter eller CORS-oppsett.
+Appen kjøres som **to separate tjenester**: backend-API-et (`server/`) på Render, og det statiske frontend-bygget på Netlify. De kommuniserer over CORS med cookie-basert innlogging (`credentials: 'include'`), så begge URL-ene må vite om hverandre.
 
-Repoet har et [Render Blueprint](https://render.com/docs/blueprint-spec) (`render.yaml`) som setter opp dette automatisk:
+**Backend (Render)** - repoet har et [Render Blueprint](https://render.com/docs/blueprint-spec) (`render.yaml`):
 
 1. Logg inn på [Render](https://dashboard.render.com/), velg **New +** → **Blueprint**, og koble til dette repoet.
-2. Render leser `render.yaml` og oppretter én web-tjeneste med riktig build-/start-kommando.
-3. Sett miljøvariablene som er markert `sync: false` i Render-dashbordet (`APP_URL` til tjenestens egen URL, samt `STRIPE_*` hvis betaling skal testes). `JWT_SECRET` genereres automatisk av Render.
+2. Render leser `render.yaml` og oppretter én web-tjeneste (kun API, ingen frontend) med riktig build-/start-kommando.
+3. Sett miljøvariablene som er markert `sync: false` i Render-dashbordet: `APP_URL` til Netlify-URLen til frontend (brukes til CORS og Stripe-redirects), samt `STRIPE_*` hvis betaling skal testes. `JWT_SECRET` genereres automatisk av Render.
+
+**Frontend (Netlify)** - repoet har `netlify.toml`:
+
+1. Logg inn på [Netlify](https://app.netlify.com/), velg **Add new site** → **Import an existing project**, og koble til dette repoet.
+2. Netlify plukker opp `netlify.toml` automatisk (build-kommando `npm ci && npm run build`, publiserer `dist/`).
+3. Sett miljøvariabelen `VITE_API_URL` i Netlify (Site configuration → Environment variables) til Render-tjenestens URL, f.eks. `https://timeplan-s5xh.onrender.com`.
+4. Redeploy siden env-variabelen brukes ved bygging (Vite bygger den inn i bundlet, den leses ikke ved kjøretid).
 
 **Stripe er valgfritt.** Er `STRIPE_*`-variablene tomme, starter appen likevel - betalingsrutene svarer da med en tydelig 503-feil i stedet for å krasje serveren. Sett dem når du er klar til å teste betalingsflyten.
 
