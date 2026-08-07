@@ -1,0 +1,14 @@
+name: Keep Render backend alive
+
+# Render sin gratis-plan sover etter ~15 min uten trafikk - ping helsesjekken jevnlig for å unngå kald oppstart.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/helse
+        run: curl -fsS --max-time 60 https://timeplan-s5xh.onrender.com/api/helse
