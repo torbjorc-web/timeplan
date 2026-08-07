@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { apiDelete, apiGet, apiPost, ApiFeil } from '../api'
 import type { PanelProps } from './PanelProps'
 import type { Rolle } from '../types'
-import { useI18n } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/useI18n'
 
 interface BrukerVisning {
   id: string

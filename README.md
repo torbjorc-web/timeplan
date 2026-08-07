@@ -100,6 +100,43 @@ npm run test              # backend (store, middleware)
 
 GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) kjører lint, tester og build for begge prosjekter automatisk på push/PR mot `master`.
 
+### Coverage-rapport
+
+```powershell
+npm run test:coverage         # frontend
+cd server
+npm run test:coverage         # backend
+```
+
+CI-jobbene kjører også `test:coverage` og laster opp HTML/LCOV-rapporten som en artifact på hver kjøring (se "Artifacts" på jobb-siden i GitHub Actions).
+
+## Deploy (live-demo)
+
+Appen er bygget som **én enkelt Node-tjeneste**: backend-serveren (`server/`) serverer både API-et og det ferdigbygde frontend-bundlet (`dist/`) på samme origin, så det er ikke nødvendig med separate frontend/backend-verter eller CORS-oppsett.
+
+Repoet har et [Render Blueprint](https://render.com/docs/blueprint-spec) (`render.yaml`) som setter opp dette automatisk:
+
+1. Logg inn på [Render](https://dashboard.render.com/), velg **New +** → **Blueprint**, og koble til dette repoet.
+2. Render leser `render.yaml` og oppretter én web-tjeneste med riktig build-/start-kommando.
+3. Sett miljøvariablene som er markert `sync: false` i Render-dashbordet (`APP_URL` til tjenestens egen URL, samt `STRIPE_*` hvis betaling skal testes). `JWT_SECRET` genereres automatisk av Render.
+
+**Viktig: JSON-fillagring og persistens.** Render sine gratis web-tjenester har **ikke** persistent disk - filene i `server/data/` (avdelinger, brukere, skoledata) nullstilles ved hver redeploy og ved periodisk restart av gratis-instanser. Dette er greit for en midlertidig live-demo, men **ikke egnet for faktisk produksjonsbruk**. For å beholde data må du enten:
+
+- Oppgradere til et betalt Render-plan og legge til en disk i `render.yaml` (kommentert eksempel ligger i filen), eller
+- Migrere lagringen fra JSON-filer til en ekte database (SQLite/Postgres) - se begrunnelsen for dagens valg og videre planer i seksjonen [JSON-fillagring](#json-fillagring) under.
+
+## JSON-fillagring
+
+Serveren lagrer alle data (avdelinger, brukere, skoledata, innloggingslogg, tilbakemeldinger) som JSON-filer under `server/data/`, med enkel per-fil skrivelås (`jsonStore.ts`) for å unngå korrupte filer ved samtidige skriv. Dette er et bevisst valg for et internt verktøy i tidlig fase: ingen ekstra database-oppsett/drift, enkelt å inspisere og sikkerhetskopiere data manuelt, og "godt nok" ytelse for antallet avdelinger/brukere verktøyet er laget for.
+
+Kjente begrensninger ved denne løsningen:
+
+- Ingen persistens på plattformer med ephemeral filsystem (se Deploy-seksjonen over).
+- Skalerer ikke til flere samtidige server-instanser (per-fil-låsen er kun i minnet til én prosess).
+- Ingen transaksjoner på tvers av flere filer.
+
+**Neste steg hvis behovet vokser:** migrere til SQLite (enkelt, fortsatt fil-basert, men med ekte transaksjoner og indeksering) eller Postgres (for flere instanser/skalering), bak samme funksjonsgrensesnitt som i dag (`store.ts`) - resten av appen (ruter, middleware) trenger ikke endres.
+
 ## Roller
 
 | Rolle | Tilgang |

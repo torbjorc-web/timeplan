@@ -1,7 +1,7 @@
 import type { PanelProps } from './PanelProps'
 import { uuid } from '../defaults'
 import type { FagType, LeseplikttInnstilling, Regelverk, SeniorRegel, Trinn, TrinnInnstilling } from '../types'
-import { useI18n } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/useI18n'
 
 const TRINN_LISTE: Trinn[] = ['barnetrinn', 'ungdomstrinn', 'videregaende']
 const FAGTYPER: FagType[] = ['teoretisk', 'praktisk-estetisk', 'kroppsoving', 'valgfag', 'annet']

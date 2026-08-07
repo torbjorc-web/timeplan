@@ -17,8 +17,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npm run test
+      - run: npm run test:coverage
       - run: npm run build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage
+          path: coverage/
 
   backend:
     runs-on: ubuntu-latest
@@ -33,5 +38,10 @@ jobs:
           cache: npm
           cache-dependency-path: server/package-lock.json
       - run: npm ci
-      - run: npm run test
+      - run: npm run test:coverage
       - run: npm run build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: server/coverage/

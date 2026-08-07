@@ -1,7 +1,7 @@
 import type { PanelProps } from './PanelProps'
 import { uuid } from '../defaults'
 import type { Fag, FagType } from '../types'
-import { useI18n } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/useI18n'
 
 const FAGTYPER: FagType[] = ['teoretisk', 'praktisk-estetisk', 'kroppsoving', 'valgfag', 'annet']
 

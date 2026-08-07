@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiPost, ApiFeil } from '../api'
-import { useAuth } from '../AuthContext'
-import { useI18n } from '../i18n/I18nContext'
-import type { Sprak } from '../i18n/I18nContext'
+import { useAuth } from '../useAuth'
+import { useI18n } from '../i18n/useI18n'
+import type { Sprak } from '../i18n/i18nContextCore'
 
 interface TenantMedStatus {
   id: string

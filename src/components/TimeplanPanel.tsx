@@ -5,7 +5,7 @@ import type { Dag } from '../types'
 import { DAGER } from '../types'
 import { finnKonflikter, type Konflikt } from '../utils/calculations'
 import { lastNedCsv, timeplanCsvRader } from '../utils/csvExport'
-import { useI18n } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/useI18n'
 
 export function TimeplanPanel({ data, setData }: PanelProps) {
   const { t } = useI18n()

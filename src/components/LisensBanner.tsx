@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { apiPost, ApiFeil } from '../api'
-import type { Bruker } from '../AuthContext'
-import { useI18n } from '../i18n/I18nContext'
+import type { Bruker } from '../authContextCore'
+import { useI18n } from '../i18n/useI18n'
 
 function dagerIgjen(proveperiodeSlutt: string): number {
   const ms = new Date(proveperiodeSlutt).getTime() - Date.now()

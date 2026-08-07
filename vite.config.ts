@@ -42,5 +42,12 @@ export default defineConfig({
   test: {
     // Ekskluder server/ - egne tester der kjøres med sin egen vitest.config.ts og andre avhengigheter.
     exclude: ['**/node_modules/**', 'server/**'],
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      exclude: ['**/node_modules/**', 'server/**', 'src/test/**', '**/*.test.{ts,tsx}', '**/*.config.ts'],
+    },
   },
 })

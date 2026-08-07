@@ -3,7 +3,7 @@ import type { PanelProps } from './PanelProps'
 import { uuid } from '../defaults'
 import type { Justering, JusteringType, Laerer, Trinn } from '../types'
 import { foreslaSeniorReduksjon } from '../utils/calculations'
-import { useI18n } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/useI18n'
 
 const TRINN_LISTE: Trinn[] = ['barnetrinn', 'ungdomstrinn', 'videregaende']
 const JUSTERINGSTYPER: JusteringType[] = ['kontaktlaerer', 'tillitsvalgt', 'seniortiltak', 'annet']

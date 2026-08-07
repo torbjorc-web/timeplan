@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: timeplan
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: master
+    buildCommand: npm ci && npm run build && npm ci --prefix server && npm run build --prefix server
+    startCommand: node server/dist/index.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: APP_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRIS_ID
+        sync: false
+    # NB: Gratis Render-instanser har IKKE persistent disk - server/data/*.json
+    # nullstilles ved hver redeploy/restart. For ekte persistens (anbefalt før
+    # reell bruk, se README "JSON-fillagring"), oppgrader til et betalt plan og
+    # legg til en disk her, f.eks.:
+    # disk:
+    #   name: timeplan-data
+    #   mountPath: /opt/render/project/src/server/data
+    #   sizeGB: 1

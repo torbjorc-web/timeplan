@@ -1,7 +1,7 @@
 import type { PanelProps } from './PanelProps'
 import { DAGER } from '../types'
 import { lastNedCsv, timeplanCsvRader } from '../utils/csvExport'
-import { useI18n } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/useI18n'
 
 export function TimeplanVisning({ data }: PanelProps) {
   const { t } = useI18n()

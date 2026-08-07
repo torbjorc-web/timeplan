@@ -1,7 +1,7 @@
 import type { PanelProps } from './PanelProps'
 import { uuid } from '../defaults'
 import type { Rom } from '../types'
-import { useI18n } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/useI18n'
 
 export function RomPanel({ data, setData }: PanelProps) {
   const { t } = useI18n()

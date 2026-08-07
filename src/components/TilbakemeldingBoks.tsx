@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { apiPost, ApiFeil } from '../api'
-import { useI18n } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/useI18n'
 
 export function TilbakemeldingBoks() {
   const { t } = useI18n()

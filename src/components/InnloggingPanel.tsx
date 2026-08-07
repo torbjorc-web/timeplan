@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useAuth, ApiFeil } from '../AuthContext'
-import { useI18n } from '../i18n/I18nContext'
+import { ApiFeil } from '../api'
+import { useAuth } from '../useAuth'
+import { useI18n } from '../i18n/useI18n'
 import type { Regelverk } from '../types'
 
 export const REGELVERK_VALG_NOKKEL = 'timeplan-regelverk-valg'

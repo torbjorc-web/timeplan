@@ -1,7 +1,7 @@
 import type { PanelProps } from './PanelProps'
 import type { Trinn } from '../types'
 import { beregnFagbehovForTrinn, formatTimer } from '../utils/calculations'
-import { useI18n } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/useI18n'
 
 const TRINN_LISTE: Trinn[] = ['barnetrinn', 'ungdomstrinn', 'videregaende']
 

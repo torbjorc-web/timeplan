@@ -1,7 +1,7 @@
 import type { PanelProps } from './PanelProps'
 import { beregnLaererAarsplan, beregnLaererLeseplikt, formatTimer } from '../utils/calculations'
 import { lastNedCsv } from '../utils/csvExport'
-import { useI18n } from '../i18n/I18nContext'
+import { useI18n } from '../i18n/useI18n'
 
 export function AarsplanPanel({ data }: PanelProps) {
   const { t } = useI18n()

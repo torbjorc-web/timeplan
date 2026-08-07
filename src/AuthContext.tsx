@@ -1,24 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
-import { apiGet, apiPost, ApiFeil } from './api'
-import type { Rolle } from './types'
-
-export interface Bruker {
-  navn: string
-  rolle: Rolle
-  laererId?: string
-  lisensstatus?: 'proveperiode' | 'aktiv' | 'sperret'
-  proveperiodeSlutt?: string
-}
-
-interface AuthContextType {
-  bruker: Bruker | null
-  laster: boolean
-  loggInn: (brukernavn: string, passord: string) => Promise<void>
-  registrerAvdeling: (avdelingNavn: string, brukernavn: string, passord: string, navn: string) => Promise<void>
-  loggUt: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextType | null>(null)
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { apiGet, apiPost } from './api'
+import { AuthContext, type Bruker } from './authContextCore'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [bruker, setBruker] = useState<Bruker | null>(null)
@@ -55,11 +37,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   )
 }
-
-export function useAuth(): AuthContextType {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth må brukes inne i AuthProvider')
-  return ctx
-}
-
-export { ApiFeil }
