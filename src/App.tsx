@@ -16,7 +16,7 @@ import { AdminPanel } from './components/AdminPanel'
 import { LisensBanner } from './components/LisensBanner'
 import { TilbakemeldingBoks } from './components/TilbakemeldingBoks'
 import { lastInnData, lagreData } from './storage'
-import { opprettTomtSkoleData } from './defaults'
+import { opprettStandardAppData, opprettTomtSkoleData } from './defaults'
 import type { AppData, SkoleData } from './types'
 import './App.css'
 
@@ -41,7 +41,8 @@ function AppInnhold() {
   useEffect(() => {
     if (!bruker || bruker.rolle === 'superadmin') return
     lastInnData()
-      .then(setAppData)
+      // Helt ny avdeling har ingen skoledata lagret ennå - fyll inn standardoppsett så siden ikke låser seg på "Laster data...".
+      .then((d) => setAppData(!d.aktivtSkoleaar || !d.skoleaar[d.aktivtSkoleaar] ? opprettStandardAppData() : d))
       .catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : 'Kunne ikke laste data fra serveren.'))
   }, [bruker])
 

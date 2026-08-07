@@ -1,8 +1,20 @@
 # Timeplan - årsplan/timeplanverktøy (SFS 2213)
 
+[![CI](https://github.com/torbjorc-web/timeplan/actions/workflows/ci.yml/badge.svg)](https://github.com/torbjorc-web/timeplan/actions/workflows/ci.yml)
+
 Verktøy for avdelingsleder til å lage årsplan og ukentlig timeplan for undervisningspersonale, basert på strukturen i SFS 2213. Multi-tenant webapp (flere skoler/avdelinger, hver med egne data), med roller for avdelingsleder, lærer, rektor og en global superadmin.
 
 Frontend: Vite + React + TypeScript (repo-rot). Backend: Node.js + Express + TypeScript (`/server`), fil-basert JSON-lagring.
+
+## Skjermbilder
+
+| Innlogging | Årsplan |
+| --- | --- |
+| ![Innloggingsside](docs/screenshots/login.png) | ![Årsplan per lærer](docs/screenshots/aarsplan.png) |
+
+| Fagfordeling | Timeplan |
+| --- | --- |
+| ![Beregnet gruppebehov](docs/screenshots/fagfordeling.png) | ![Ukentlig timeplan](docs/screenshots/timeplan.png) |
 
 ## Oppsett
 
@@ -75,6 +87,18 @@ npm start                # kjører den bygde serveren, serverer også frontend f
 ```
 
 Serveren kjører på samme origin for både API og statiske filer i produksjon (unngår CORS).
+
+## Testing og CI
+
+Både frontend og backend har et minimum av Vitest-tester for kjernelogikken (beregninger, lisensvalidering, rollebasert tilgangskontroll):
+
+```powershell
+npm run test              # frontend (utils/calculations)
+cd server
+npm run test              # backend (store, middleware)
+```
+
+GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) kjører lint, tester og build for begge prosjekter automatisk på push/PR mot `master`.
 
 ## Roller
 
