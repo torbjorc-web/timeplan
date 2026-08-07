@@ -3,7 +3,8 @@ import Stripe from 'stripe'
 const STRIPE_HEMMELIG_NOKKEL = process.env.STRIPE_SECRET_KEY
 export const STRIPE_WEBHOOK_HEMMELIGHET = process.env.STRIPE_WEBHOOK_SECRET
 export const STRIPE_PRIS_ID = process.env.STRIPE_PRIS_ID
-export const APP_URL = process.env.APP_URL ?? 'http://localhost:5173'
+// Fjerner en evt. trailing slash - CORS-origin-sammenligning er streng eksakt match mot nettleserens Origin-header (uten slash).
+export const APP_URL = (process.env.APP_URL ?? 'http://localhost:5173').replace(/\/+$/, '')
 
 if (!STRIPE_HEMMELIG_NOKKEL && process.env.NODE_ENV === 'production') {
   // Ikke krasj hele appen i produksjon uten Stripe konfigurert - betalingsrutene
