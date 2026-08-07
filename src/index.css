@@ -1,0 +1,62 @@
+:root {
+  --text: #1f2430;
+  --text-muted: #5b6270;
+  --bg: #f5f6f8;
+  --panel-bg: #ffffff;
+  --border: #d9dce2;
+  --accent: #2f6fed;
+  --accent-hover: #1f56c4;
+  --danger: #c62828;
+  --danger-bg: #fdecea;
+  --warn-bg: #fff8e1;
+  --warn-text: #8a6100;
+  font: 15px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+h1, h2, h3 {
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: var(--text);
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input, select {
+  font: inherit;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-bg);
+  color: var(--text);
+}
+

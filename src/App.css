@@ -1,0 +1,244 @@
+.senter-melding {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  color: var(--text-muted);
+}
+
+.app-skall {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+.topplinje {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.topplinje-hoyre {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skoleaar-tag {
+  color: var(--text-muted);
+}
+
+.faner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 20px 0;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.faner button {
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+}
+
+.faner button.fane-aktiv {
+  background: var(--bg);
+  border-color: var(--border);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+main {
+  flex: 1;
+  padding: 20px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.mellom-topp {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hjelpetekst {
+  color: var(--text-muted);
+  font-size: 13.5px;
+  margin: 8px 0 14px;
+  max-width: 900px;
+}
+
+.advarsel {
+  color: var(--warn-text);
+  background: var(--warn-bg);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+.tabell {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+}
+
+.tabell th, .tabell td {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.tabell th {
+  background: #eef1f6;
+}
+
+.tabell input, .tabell select {
+  width: 100%;
+  min-width: 70px;
+}
+
+.tabell .sentrert {
+  text-align: center;
+}
+
+.knapp-faresone {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.knapp-liten {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.knapp-lenke {
+  border: none;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  padding: 4px 0;
+}
+
+.knapperad {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.rad-valgt {
+  background: #eaf1ff;
+}
+
+.detaljboks {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.delseksjon {
+  margin-bottom: 24px;
+}
+
+.skjema-rad {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.konfliktboks {
+  border: 1px solid var(--danger);
+  background: var(--danger-bg);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.timeplan-tabell {
+  table-layout: fixed;
+}
+
+.oekt-nr {
+  white-space: nowrap;
+  background: #eef1f6;
+  font-weight: 600;
+}
+
+.timeplan-celle {
+  vertical-align: top;
+  min-width: 140px;
+}
+
+.time-tag {
+  background: #eaf1ff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+}
+
+.innlogging-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  background: var(--bg);
+}
+
+.innlogging-boks {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px;
+  width: 380px;
+  max-width: 90vw;
+}
+
+.innlogging-boks form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.innlogging-boks label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+@media print {
+  .topplinje, .faner, .knapperad, .skjema-rad, button {
+    display: none !important;
+  }
+  main {
+    padding: 0;
+  }
+}
+
