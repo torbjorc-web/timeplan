@@ -6,7 +6,9 @@ export const STRIPE_PRIS_ID = process.env.STRIPE_PRIS_ID
 export const APP_URL = process.env.APP_URL ?? 'http://localhost:5173'
 
 if (!STRIPE_HEMMELIG_NOKKEL && process.env.NODE_ENV === 'production') {
-  throw new Error('STRIPE_SECRET_KEY må settes som miljøvariabel i produksjon.')
+  // Ikke krasj hele appen i produksjon uten Stripe konfigurert - betalingsrutene
+  // gir en tydelig 503-feil til klienten inntil nøklene settes (se betaling.ts).
+  console.warn('STRIPE_SECRET_KEY er ikke satt - betalingsfunksjoner er deaktivert.')
 }
 
 /** Er null i lokal utvikling uten Stripe-nøkkel satt - betalingsruter gir da en tydelig feilmelding. */

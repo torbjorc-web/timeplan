@@ -120,6 +120,8 @@ Repoet har et [Render Blueprint](https://render.com/docs/blueprint-spec) (`rende
 2. Render leser `render.yaml` og oppretter én web-tjeneste med riktig build-/start-kommando.
 3. Sett miljøvariablene som er markert `sync: false` i Render-dashbordet (`APP_URL` til tjenestens egen URL, samt `STRIPE_*` hvis betaling skal testes). `JWT_SECRET` genereres automatisk av Render.
 
+**Stripe er valgfritt.** Er `STRIPE_*`-variablene tomme, starter appen likevel - betalingsrutene svarer da med en tydelig 503-feil i stedet for å krasje serveren. Sett dem når du er klar til å teste betalingsflyten.
+
 **Viktig: JSON-fillagring og persistens.** Render sine gratis web-tjenester har **ikke** persistent disk - filene i `server/data/` (avdelinger, brukere, skoledata) nullstilles ved hver redeploy og ved periodisk restart av gratis-instanser. Dette er greit for en midlertidig live-demo, men **ikke egnet for faktisk produksjonsbruk**. For å beholde data må du enten:
 
 - Oppgradere til et betalt Render-plan og legge til en disk i `render.yaml` (kommentert eksempel ligger i filen), eller
