@@ -103,7 +103,12 @@ function AppInnhold() {
   if (laster) return <div className="senter-melding">{t.common.loading}</div>
   if (!bruker) return <InnloggingPanel />
   if (bruker.rolle === 'superadmin') return <AdminPanel />
-  if (!appData || !skoleData) return <div className="senter-melding">{t.common.loadingData}</div>
+  if (!appData || !skoleData)
+    return (
+      <div className="senter-melding">
+        {feilmelding ? <p className="advarsel">⚠ {feilmelding}</p> : t.common.loadingData}
+      </div>
+    )
 
   const panelProps = { data: skoleData, setData: setSkoleData }
 

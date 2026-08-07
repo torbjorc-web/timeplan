@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { hashPassord } from './auth.js'
-import { finnBrukerVedBrukernavn, leggTilBruker, opprettTenant } from './store.js'
+import { finnBrukerVedBrukernavn, leggTilBruker, oppdaterTenant, opprettTenant } from './store.js'
 import type { Bruker } from './types.js'
 
 // Må matches av "Prøv demo-konto"-knappen i src/components/InnloggingPanel.tsx.
@@ -15,6 +15,10 @@ export async function seedDemoKonto(): Promise<void> {
   const eksisterende = await finnBrukerVedBrukernavn(DEMO_BRUKERNAVN)
   if (eksisterende) {
     demoTenantId = eksisterende.tenantId
+    // Forny prøveperioden ved hver oppstart så demo-kontoen aldri låser seg pga. utløpt lisens.
+    await oppdaterTenant(eksisterende.tenantId, {
+      proveperiodeSlutt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    })
     return
   }
   const tenant = await opprettTenant('Demo-avdeling')
