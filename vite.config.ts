@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -37,5 +38,9 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:3001',
     },
+  },
+  test: {
+    // Ekskluder server/ - egne tester der kjøres med sin egen vitest.config.ts og andre avhengigheter.
+    exclude: ['**/node_modules/**', 'server/**'],
   },
 })
