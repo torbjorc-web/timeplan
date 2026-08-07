@@ -5,7 +5,9 @@ services:
     plan: free
     region: frankfurt
     branch: master
-    buildCommand: npm ci && npm run build && npm ci --prefix server && npm run build --prefix server
+    # --include=dev er nødvendig fordi NODE_ENV=production (satt under) ellers får
+    # npm ci til å hoppe over devDependencies - der byggeverktøyene (vite, typescript) ligger.
+    buildCommand: npm ci --include=dev && npm run build && npm ci --prefix server --include=dev && npm run build --prefix server
     startCommand: node server/dist/index.js
     healthCheckPath: /
     envVars:
