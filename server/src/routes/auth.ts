@@ -23,6 +23,11 @@ const COOKIE_INNSTILLINGER = {
   secure: process.env.NODE_ENV === 'production',
   maxAge: 12 * 60 * 60 * 1000,
 }
+const COOKIE_SLETTE_INNSTILLINGER = {
+  httpOnly: COOKIE_INNSTILLINGER.httpOnly,
+  sameSite: COOKIE_INNSTILLINGER.sameSite,
+  secure: COOKIE_INNSTILLINGER.secure,
+}
 
 function erGyldigBrukernavn(verdi: unknown): verdi is string {
   return typeof verdi === 'string' && /^[a-zA-Z0-9._-]{3,50}$/.test(verdi)
@@ -121,7 +126,7 @@ authRuter.post('/login', async (req, res) => {
 })
 
 authRuter.post('/logout', (_req, res) => {
-  res.clearCookie('token', COOKIE_INNSTILLINGER)
+  res.clearCookie('token', COOKIE_SLETTE_INNSTILLINGER)
   res.json({ ok: true })
 })
 

@@ -4,6 +4,7 @@ import type { Tenant } from './types.js'
 vi.mock('./store.js', () => ({
   finnBrukerVedBrukernavn: vi.fn(),
   leggTilBruker: vi.fn(),
+  oppdaterTenant: vi.fn(),
   opprettTenant: vi.fn(),
 }))
 
@@ -39,7 +40,7 @@ describe('seedDemoKonto', () => {
     expect(seedDemoModul.demoTenantId).toBe('demo-tenant')
   })
 
-  it('gjør ingenting hvis demo-brukeren allerede finnes', async () => {
+  it('fornyer prøveperioden og oppretter ikke demo-brukeren på nytt', async () => {
     vi.mocked(store.finnBrukerVedBrukernavn).mockResolvedValue({
       id: '1',
       tenantId: 'demo-tenant',
@@ -54,6 +55,12 @@ describe('seedDemoKonto', () => {
 
     expect(store.opprettTenant).not.toHaveBeenCalled()
     expect(store.leggTilBruker).not.toHaveBeenCalled()
+    expect(store.oppdaterTenant).toHaveBeenCalledWith(
+      'demo-tenant',
+      expect.objectContaining({
+        proveperiodeSlutt: expect.any(String),
+      }),
+    )
     expect(seedDemoModul.demoTenantId).toBe('demo-tenant')
   })
 })
