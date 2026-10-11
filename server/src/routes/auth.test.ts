@@ -6,6 +6,7 @@ import type { Bruker, Tenant } from '../types.js'
 
 vi.mock('../store.js', () => ({
   finnBrukerVedBrukernavn: vi.fn(),
+  finnBrukerVedId: vi.fn(),
   hentBrukere: vi.fn(),
   hentTenantById: vi.fn(),
   leggTilBruker: vi.fn(),
@@ -16,6 +17,8 @@ vi.mock('../store.js', () => ({
 const store = await import('../store.js')
 const { authRuter } = await import('./auth.js')
 const { hashPassord, lagToken } = await import('../auth.js')
+const { nullstillRateLimiter } = await import('../rateLimiter.js')
+const { BrukernavnOpptattFeil } = await import('../feil.js')
 
 function lagApp() {
   const app = express()
@@ -51,6 +54,7 @@ async function lagBruker(overstyring: Partial<Bruker> = {}): Promise<Bruker> {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  nullstillRateLimiter()
 })
 
 describe('POST /api/auth/registrer-avdeling', () => {
@@ -97,6 +101,42 @@ describe('POST /api/auth/registrer-avdeling', () => {
 
     expect(svar.status).toBe(409)
     expect(store.opprettTenant).not.toHaveBeenCalled()
+  })
+})
+
+describe('POST /api/auth/registrer-avdeling - misbruksvern', () => {
+  const gyldig = { avdelingNavn: 'Ny Avdeling', brukernavn: 'ny.leder', passord: 'langtPassord1', navn: 'Ny Leder' }
+
+  it('avviser passord lengre enn 72 bytes (bcrypt kutter ellers stille)', async () => {
+    const svar = await request(lagApp())
+      .post('/api/auth/registrer-avdeling')
+      .send({ ...gyldig, passord: 'a'.repeat(73) })
+    expect(svar.status).toBe(400)
+    expect(store.opprettTenant).not.toHaveBeenCalled()
+  })
+
+  it('begrenser antall registreringer per IP', async () => {
+    vi.mocked(store.finnBrukerVedBrukernavn).mockResolvedValue(undefined)
+    vi.mocked(store.opprettTenant).mockResolvedValue(lagTenant())
+    vi.mocked(store.leggTilBruker).mockResolvedValue(undefined)
+    vi.mocked(store.loggInnlogging).mockResolvedValue(undefined)
+
+    const statuser: number[] = []
+    for (let i = 0; i < 6; i++) {
+      const svar = await request(lagApp()).post('/api/auth/registrer-avdeling').send(gyldig)
+      statuser.push(svar.status)
+    }
+    expect(statuser.slice(0, 5)).toEqual([201, 201, 201, 201, 201])
+    expect(statuser[5]).toBe(429)
+  })
+
+  it('svarer 409 når brukernavnet blir tatt av en samtidig registrering', async () => {
+    vi.mocked(store.finnBrukerVedBrukernavn).mockResolvedValue(undefined)
+    vi.mocked(store.opprettTenant).mockResolvedValue(lagTenant())
+    vi.mocked(store.leggTilBruker).mockRejectedValue(new BrukernavnOpptattFeil())
+
+    const svar = await request(lagApp()).post('/api/auth/registrer-avdeling').send(gyldig)
+    expect(svar.status).toBe(409)
   })
 })
 
@@ -177,6 +217,7 @@ describe('GET /api/auth/meg', () => {
 
   it('avviser når brukeren ikke lenger finnes', async () => {
     const token = lagToken({ brukerId: 'slettet-bruker', tenantId: 'tenant-1', rolle: 'avdelingsleder' })
+    vi.mocked(store.finnBrukerVedId).mockResolvedValue(undefined)
     vi.mocked(store.hentBrukere).mockResolvedValue([])
 
     const svar = await request(lagApp()).get('/api/auth/meg').set('Cookie', [`token=${token}`])
@@ -186,6 +227,7 @@ describe('GET /api/auth/meg', () => {
   it('returnerer profilen for innlogget bruker', async () => {
     const bruker = await lagBruker({ id: 'bruker-42' })
     const token = lagToken({ brukerId: bruker.id, tenantId: bruker.tenantId, rolle: bruker.rolle })
+    vi.mocked(store.finnBrukerVedId).mockResolvedValue(bruker)
     vi.mocked(store.hentBrukere).mockResolvedValue([bruker])
     vi.mocked(store.hentTenantById).mockResolvedValue(lagTenant())
 

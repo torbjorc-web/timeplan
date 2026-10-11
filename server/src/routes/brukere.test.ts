@@ -13,6 +13,7 @@ vi.mock('../store.js', () => ({
 
 const store = await import('../store.js')
 const { brukereRuter } = await import('./brukere.js')
+const { BrukernavnOpptattFeil } = await import('../feil.js')
 
 function lagApp(rolle: Rolle = 'avdelingsleder', tenantId = 'tenant-1') {
   const app = express()
@@ -86,6 +87,25 @@ describe('POST /api/brukere', () => {
       .send({ brukernavn: 'ny.laerer', passord: 'langtPassord1', navn: 'Ny Lærer', rolle: 'laerer' })
 
     expect(svar.status).toBe(400)
+  })
+
+  it('avviser passord lengre enn 72 bytes', async () => {
+    const svar = await request(lagApp())
+      .post('/api/brukere')
+      .send({ brukernavn: 'ny.laerer', passord: 'a'.repeat(73), navn: 'Ny Lærer', rolle: 'rektor' })
+    expect(svar.status).toBe(400)
+    expect(store.leggTilBruker).not.toHaveBeenCalled()
+  })
+
+  it('svarer 409 når brukernavnet tas av en samtidig forespørsel', async () => {
+    vi.mocked(store.finnBrukerVedBrukernavn).mockResolvedValue(undefined)
+    vi.mocked(store.leggTilBruker).mockRejectedValue(new BrukernavnOpptattFeil())
+
+    const svar = await request(lagApp())
+      .post('/api/brukere')
+      .send({ brukernavn: 'laerer.en', passord: 'langtPassord1', navn: 'Duplikat', rolle: 'rektor' })
+
+    expect(svar.status).toBe(409)
   })
 
   it('avviser duplikat brukernavn', async () => {

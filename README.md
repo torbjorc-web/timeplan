@@ -40,6 +40,7 @@ STRIPE_PRIS_ID=price_...
 APP_URL=http://localhost:5173
 ```
 
+- `TRUST_PROXY` (valgfri) er antall proxy-hop foran serveren. Standard er `1` i produksjon (Render) og `0` lokalt. Uten riktig verdi ser serveren proxyens IP i stedet for brukerens, og rate limiting/innloggingslogg blir feil.
 - `JWT_SECRET` er **påkrevd i produksjon** (`NODE_ENV=production`). I utvikling brukes en innebygd standardverdi hvis den mangler.
 - Stripe-variablene er kun nødvendig for å teste/bruke "Kjøp lisens"-knappen og lisens-webhooken. Uten dem gir betalingsrutene en tydelig 503-feil, resten av appen fungerer som normalt (nye avdelinger får 30 dagers prøveperiode automatisk).
 - **Vipps er ikke implementert.** Dette krever en signert Vipps-merchant-avtale og egne sertifikater/klient-ID som ikke kan settes opp uten dine egne Vipps-credentials. Legg det til senere via Vipps sitt ePayment-API når avtalen er på plass - samme mønster som Stripe-integrasjonen (egen rute + webhook som oppdaterer `tenant.lisensstatus`).
@@ -47,7 +48,8 @@ APP_URL=http://localhost:5173
 ### Sette opp Stripe lokalt
 
 1. Opprett et produkt/abonnement i [Stripe Dashboard](https://dashboard.stripe.com/) (test-modus), kopier pris-ID-en til `STRIPE_PRIS_ID`.
-2. Bruk [Stripe CLI](https://stripe.com/docs/stripe-cli) til å videresende webhooks lokalt: `stripe listen --forward-to localhost:3001/api/betaling/webhook`. CLI-en gir deg en `whsec_...`-verdi til `STRIPE_WEBHOOK_SECRET`.
+2. Webhook-endepunktet må lytte på `checkout.session.completed`, `customer.subscription.updated` og `customer.subscription.deleted`. Avdelingen sperres først når Stripe har gitt opp betalingen (status `unpaid`/`canceled`), ikke ved første feilede trekk - hva som skjer etter siste forsøk velger du i Stripe Dashboard under Billing → Subscriptions.
+3. Bruk [Stripe CLI](https://stripe.com/docs/stripe-cli) til å videresende webhooks lokalt: `stripe listen --forward-to localhost:3001/api/betaling/webhook`. CLI-en gir deg en `whsec_...`-verdi til `STRIPE_WEBHOOK_SECRET`.
 
 ## Opprette superadmin-bruker
 

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Bruker } from '../types.js'
 
 vi.mock('../store.js', () => ({
+  finnBrukerVedId: vi.fn(),
   hentBrukere: vi.fn(),
   leggTilTilbakemelding: vi.fn(),
 }))
@@ -21,13 +22,20 @@ function lagApp() {
   return app
 }
 
+// autentiser slår nå opp brukeren i lagringen - la oppslaget svare med samme rolle som tokenet.
+let innloggetRolle: 'avdelingsleder' | 'laerer' = 'avdelingsleder'
+
 function tokenCookie(rolle: 'avdelingsleder' | 'laerer' = 'avdelingsleder') {
+  innloggetRolle = rolle
   const token = lagToken({ brukerId: 'bruker-1', tenantId: 'tenant-1', rolle })
   return `token=${token}`
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(store.finnBrukerVedId).mockImplementation(
+    async (id) => ({ id, tenantId: 'tenant-1', brukernavn: 'b', passordHash: 'x', rolle: innloggetRolle, navn: 'B', opprettet: '' }) as Bruker,
+  )
 })
 
 describe('POST /api/tilbakemeldinger', () => {

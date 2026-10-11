@@ -27,6 +27,15 @@ export function erBlokkert(nokkel: string): boolean {
 }
 
 export function registrerMislykketForsok(nokkel: string): void {
+  // Rydd bort utløpte oppføringer så mappene ikke vokser ubegrenset (f.eks. ved mange ulike brukernavn).
+  if (tidspunktForForsteForsok.size > 1000) {
+    for (const [k, t] of tidspunktForForsteForsok) {
+      if (Date.now() - t > VINDU_MS) {
+        tidspunktForForsteForsok.delete(k)
+        forsokPerNokkel.delete(k)
+      }
+    }
+  }
   const forste = tidspunktForForsteForsok.get(nokkel)
   if (!forste || Date.now() - forste > VINDU_MS) {
     tidspunktForForsteForsok.set(nokkel, Date.now())
@@ -44,4 +53,35 @@ export function registrerMislykketForsok(nokkel: string): void {
 export function nullstillForsok(nokkel: string): void {
   forsokPerNokkel.delete(nokkel)
   tidspunktForForsteForsok.delete(nokkel)
+}
+
+
+/** Enkel fast-vindu-teller, f.eks. for å begrense registrering av nye avdelinger per IP. Returnerer false når grensen er nådd. */
+const hendelser = new Map<string, { antall: number; vinduStart: number }>()
+let sisteOppryddingMs = Date.now()
+
+export function tillatHendelse(nokkel: string, maks: number, vinduMs: number): boolean {
+  const naa = Date.now()
+  // Rydd bort utløpte vinduer av og til så mappen ikke vokser ubegrenset.
+  if (naa - sisteOppryddingMs > vinduMs) {
+    for (const [k, v] of hendelser) {
+      if (naa - v.vinduStart > vinduMs) hendelser.delete(k)
+    }
+    sisteOppryddingMs = naa
+  }
+  const eksisterende = hendelser.get(nokkel)
+  if (!eksisterende || naa - eksisterende.vinduStart > vinduMs) {
+    hendelser.set(nokkel, { antall: 1, vinduStart: naa })
+    return true
+  }
+  if (eksisterende.antall >= maks) return false
+  eksisterende.antall += 1
+  return true
+}
+
+/** Kun for tester. */
+export function nullstillRateLimiter(): void {
+  forsokPerNokkel.clear()
+  tidspunktForForsteForsok.clear()
+  hendelser.clear()
 }

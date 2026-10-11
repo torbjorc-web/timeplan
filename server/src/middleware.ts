@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 import { verifiserToken } from './auth.js'
-import { harGyldigLisens, hentTenantById } from './store.js'
+import { finnBrukerVedId, harGyldigLisens, hentTenantById } from './store.js'
 import { demoTenantId } from './seedDemo.js'
 import type { Rolle } from './types.js'
 
@@ -13,7 +13,7 @@ declare global {
   }
 }
 
-export function autentiser(req: Request, res: Response, next: NextFunction): void {
+export async function autentiser(req: Request, res: Response, next: NextFunction): Promise<void> {
   const token = req.cookies?.token as string | undefined
   if (!token) {
     res.status(401).json({ feil: 'Ikke innlogget.' })
@@ -22,6 +22,18 @@ export function autentiser(req: Request, res: Response, next: NextFunction): voi
   const payload = verifiserToken(token)
   if (!payload) {
     res.status(401).json({ feil: 'Ugyldig eller utløpt økt. Logg inn på nytt.' })
+    return
+  }
+  try {
+    // Token alene er ikke nok: slettede brukere (eller endret rolle/avdeling) skal miste tilgang med en gang,
+    // ikke først når tokenet utløper etter 12 timer.
+    const bruker = await finnBrukerVedId(payload.brukerId)
+    if (!bruker || bruker.rolle !== payload.rolle || bruker.tenantId !== payload.tenantId) {
+      res.status(401).json({ feil: 'Ugyldig eller utløpt økt. Logg inn på nytt.' })
+      return
+    }
+  } catch (err) {
+    next(err)
     return
   }
   req.bruker = payload

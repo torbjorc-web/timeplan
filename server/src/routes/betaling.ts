@@ -7,6 +7,15 @@ import { hentTenantById, hentTenantByStripeCustomerId, oppdaterTenant } from '..
 
 export const betalingRuter = Router()
 
+const STATUSER_SOM_SPERRER = new Set(['unpaid', 'canceled', 'incomplete_expired'])
+
+async function sperrStripeKunde(kunde: string | Stripe.Customer | null | undefined): Promise<void> {
+  const stripeCustomerId = typeof kunde === 'string' ? kunde : undefined
+  if (!stripeCustomerId) return
+  const tenant = await hentTenantByStripeCustomerId(stripeCustomerId)
+  if (tenant) await oppdaterTenant(tenant.id, { lisensstatus: 'sperret' })
+}
+
 betalingRuter.post('/opprett-checkout', autentiser, kreverRolle('avdelingsleder'), asyncHandler(async (req, res) => {
   if (!stripe || !STRIPE_PRIS_ID) {
     res.status(503).json({ feil: 'Betalingsløsning er ikke konfigurert på serveren ennå. Kontakt support.' })
@@ -22,7 +31,6 @@ betalingRuter.post('/opprett-checkout', autentiser, kreverRolle('avdelingsleder'
     mode: 'subscription',
     line_items: [{ price: STRIPE_PRIS_ID, quantity: 1 }],
     client_reference_id: tenantId,
-    customer_email: undefined,
     metadata: { tenantId },
     subscription_data: { metadata: { tenantId } },
     success_url: `${APP_URL}/?betaling=ok`,
@@ -56,14 +64,18 @@ betalingRuter.post('/webhook', asyncHandler(async (req, res) => {
         stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : undefined,
       })
     }
-  } else if (event.type === 'customer.subscription.deleted' || event.type === 'invoice.payment_failed') {
-    const objekt = event.data.object as { customer?: string | Stripe.Customer | null }
-    const stripeCustomerId = typeof objekt.customer === 'string' ? objekt.customer : undefined
-    if (stripeCustomerId) {
-      const tenant = await hentTenantByStripeCustomerId(stripeCustomerId)
-      if (tenant) await oppdaterTenant(tenant.id, { lisensstatus: 'sperret' })
+  } else if (event.type === 'customer.subscription.deleted') {
+    await sperrStripeKunde((event.data.object as { customer?: string | Stripe.Customer | null }).customer)
+  } else if (event.type === 'customer.subscription.updated') {
+    // Sperr først når Stripe har gitt opp betalingen (etter innkrevingsforsøkene), ikke ved første feilede trekk.
+    // Hva som skjer etter siste forsøk (cancel / unpaid) styres i Stripe Dashboard -> Billing -> Subscriptions.
+    const abonnement = event.data.object as { customer?: string | Stripe.Customer | null; status?: string }
+    if (abonnement.status && STATUSER_SOM_SPERRER.has(abonnement.status)) {
+      await sperrStripeKunde(abonnement.customer)
     }
   }
+  // invoice.payment_failed gjør bevisst ingenting: Stripe prøver å trekke på nytt (past_due), og
+  // avdelingen beholder tilgang til siste forsøk er brukt opp.
 
   res.json({ mottatt: true })
 }))

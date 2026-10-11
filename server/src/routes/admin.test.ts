@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Bruker, Innloggingslogg, Tenant, Tilbakemelding } from '../types.js'
 
 vi.mock('../store.js', () => ({
+  finnBrukerVedId: vi.fn(),
   hentBrukere: vi.fn(),
   hentInnloggingslogg: vi.fn(),
   hentTenants: vi.fn(),
@@ -24,7 +25,11 @@ function lagApp() {
   return app
 }
 
+// autentiser slår nå opp brukeren i lagringen - la oppslaget svare med samme rolle som tokenet.
+let innloggetRolle: 'superadmin' | 'avdelingsleder' = 'superadmin'
+
 function tokenCookie(rolle: 'superadmin' | 'avdelingsleder' = 'superadmin') {
+  innloggetRolle = rolle
   const token = lagToken({ brukerId: 'admin-1', tenantId: '', rolle })
   return `token=${token}`
 }
@@ -42,6 +47,9 @@ function lagTenant(overstyring: Partial<Tenant> = {}): Tenant {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(store.finnBrukerVedId).mockImplementation(
+    async (id) => ({ id, tenantId: '', brukernavn: 'admin', passordHash: 'x', rolle: innloggetRolle, navn: 'Admin', opprettet: '' }) as Bruker,
+  )
 })
 
 describe('tilgangskontroll', () => {

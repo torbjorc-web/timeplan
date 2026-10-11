@@ -1,12 +1,19 @@
 import type { SkoleData } from '../types'
 
-/** Genererer og laster ned en CSV-fil (semikolon-separert, komma som desimaltegn - Excel norsk locale). */
+/**
+ * Gjør én verdi trygg for CSV (semikolon-separert, komma som desimaltegn - Excel norsk locale).
+ * Tekst som starter med =, +, -, @ (eller tab/linjeskift) tolkes som formel av Excel/Sheets
+ * ("CSV injection"), så den får en ledende apostrof og vises som ren tekst. Tall røres ikke.
+ */
+export function escapeCelle(verdi: string | number): string {
+  let tekst = typeof verdi === 'number' ? verdi.toString().replace('.', ',') : verdi
+  if (typeof verdi === 'string' && /^[=+\-@\t\r]/.test(tekst)) tekst = `'${tekst}`
+  if (/[;"\n\r]/.test(tekst)) return `"${tekst.replace(/"/g, '""')}"`
+  return tekst
+}
+
+/** Genererer og laster ned en CSV-fil. */
 export function lastNedCsv(filnavn: string, rader: (string | number)[][]): void {
-  function escapeCelle(verdi: string | number): string {
-    const tekst = typeof verdi === 'number' ? verdi.toString().replace('.', ',') : verdi
-    if (/[;"\n\r]/.test(tekst)) return `"${tekst.replace(/"/g, '""')}"`
-    return tekst
-  }
   const BOM = '\uFEFF' // sikrer riktig visning av æøå i Excel
   const innhold = rader.map((rad) => rad.map(escapeCelle).join(';')).join('\r\n')
   const blob = new Blob([BOM + innhold], { type: 'text/csv;charset=utf-8;' })

@@ -1,7 +1,8 @@
 import { Router } from 'express'
 import { asyncHandler } from '../asyncHandler.js'
 import { randomUUID } from 'node:crypto'
-import { hashPassord } from '../auth.js'
+import { erGyldigPassord, hashPassord } from '../auth.js'
+import { BrukernavnOpptattFeil } from '../feil.js'
 import { kreverRolle } from '../middleware.js'
 import { finnBrukerVedBrukernavn, hentBrukereForTenant, leggTilBruker, slettBruker } from '../store.js'
 import type { Bruker, BrukerUtenPassord, Rolle } from '../types.js'
@@ -27,14 +28,13 @@ brukereRuter.post('/', kreverRolle('avdelingsleder'), asyncHandler(async (req, r
   const { brukernavn, passord, navn, rolle, laererId } = req.body ?? {}
   if (
     !erGyldigBrukernavn(brukernavn) ||
-    typeof passord !== 'string' ||
-    passord.length < 8 ||
+    !erGyldigPassord(passord) ||
     typeof navn !== 'string' ||
     navn.trim().length < 1 ||
     !GYLDIGE_ROLLER.includes(rolle)
   ) {
     res.status(400).json({
-      feil: 'Ugyldige felt. Brukernavn 3-50 tegn, passord minst 8 tegn, navn og gyldig rolle må fylles ut.',
+      feil: 'Ugyldige felt. Brukernavn 3-50 tegn, passord 8-72 tegn, navn og gyldig rolle må fylles ut.',
     })
     return
   }
@@ -57,7 +57,15 @@ brukereRuter.post('/', kreverRolle('avdelingsleder'), asyncHandler(async (req, r
     navn: navn.trim(),
     opprettet: new Date().toISOString(),
   }
-  await leggTilBruker(ny)
+  try {
+    await leggTilBruker(ny)
+  } catch (err) {
+    if (err instanceof BrukernavnOpptattFeil) {
+      res.status(409).json({ feil: 'Brukernavnet er allerede i bruk.' })
+      return
+    }
+    throw err
+  }
   res.status(201).json(utenPassord(ny))
 }))
 

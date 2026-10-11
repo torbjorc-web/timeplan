@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { nb } from './nb'
 import { en } from './en'
 import type { Dictionary } from './dictionary'
@@ -14,6 +14,11 @@ function lastLagretSprak(): Sprak {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [sprak, setSprakState] = useState<Sprak>(lastLagretSprak)
+
+  // Hold <html lang> i synk med valgt språk (skjermlesere, orddeling og nettleserens oversettelsesforslag).
+  useEffect(() => {
+    document.documentElement.lang = sprak
+  }, [sprak])
 
   const setSprak = useCallback((nytt: Sprak) => {
     setSprakState(nytt)

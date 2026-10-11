@@ -147,13 +147,12 @@ describe('POST /api/betaling/webhook', () => {
     expect(store.oppdaterTenant).toHaveBeenCalledWith('tenant-2', { lisensstatus: 'sperret' })
   })
 
-  it('sperrer avdelingen ved invoice.payment_failed', async () => {
+  it('sperrer IKKE avdelingen ved første feilede trekk (invoice.payment_failed) - Stripe prøver på nytt', async () => {
     vi.mocked(stripeModul.stripe!.webhooks.constructEvent).mockReturnValue({
       type: 'invoice.payment_failed',
       data: { object: { customer: 'cus_789' } },
     } as never)
     vi.mocked(store.hentTenantByStripeCustomerId).mockResolvedValue(lagTenant({ id: 'tenant-3' }))
-    vi.mocked(store.oppdaterTenant).mockResolvedValue(lagTenant({ id: 'tenant-3', lisensstatus: 'sperret' }))
 
     const svar = await request(lagApp())
       .post('/api/betaling/webhook')
@@ -162,7 +161,45 @@ describe('POST /api/betaling/webhook', () => {
       .send(JSON.stringify({}))
 
     expect(svar.status).toBe(200)
-    expect(store.oppdaterTenant).toHaveBeenCalledWith('tenant-3', { lisensstatus: 'sperret' })
+    expect(store.oppdaterTenant).not.toHaveBeenCalled()
+  })
+
+  it.each(['unpaid', 'canceled', 'incomplete_expired'])(
+    'sperrer avdelingen når abonnementet oppdateres til status %s',
+    async (status) => {
+      vi.mocked(stripeModul.stripe!.webhooks.constructEvent).mockReturnValue({
+        type: 'customer.subscription.updated',
+        data: { object: { customer: 'cus_789', status } },
+      } as never)
+      vi.mocked(store.hentTenantByStripeCustomerId).mockResolvedValue(lagTenant({ id: 'tenant-3' }))
+      vi.mocked(store.oppdaterTenant).mockResolvedValue(lagTenant({ id: 'tenant-3', lisensstatus: 'sperret' }))
+
+      const svar = await request(lagApp())
+        .post('/api/betaling/webhook')
+        .set('stripe-signature', 'gyldig-signatur')
+        .set('Content-Type', 'application/json')
+        .send(JSON.stringify({}))
+
+      expect(svar.status).toBe(200)
+      expect(store.oppdaterTenant).toHaveBeenCalledWith('tenant-3', { lisensstatus: 'sperret' })
+    },
+  )
+
+  it.each(['active', 'past_due', 'trialing'])('sperrer IKKE avdelingen når abonnementet oppdateres til status %s', async (status) => {
+    vi.mocked(stripeModul.stripe!.webhooks.constructEvent).mockReturnValue({
+      type: 'customer.subscription.updated',
+      data: { object: { customer: 'cus_789', status } },
+    } as never)
+    vi.mocked(store.hentTenantByStripeCustomerId).mockResolvedValue(lagTenant({ id: 'tenant-3' }))
+
+    const svar = await request(lagApp())
+      .post('/api/betaling/webhook')
+      .set('stripe-signature', 'gyldig-signatur')
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({}))
+
+    expect(svar.status).toBe(200)
+    expect(store.oppdaterTenant).not.toHaveBeenCalled()
   })
 
   it('gjør ingenting når stripe-kunden ikke er koblet til noen avdeling', async () => {

@@ -1,9 +1,10 @@
 import { Router } from 'express'
 import { asyncHandler } from '../asyncHandler.js'
 import { randomUUID } from 'node:crypto'
-import { hashPassord, lagToken, sammenlignPassord } from '../auth.js'
+import { erGyldigPassord, hashPassord, lagToken, sammenlignMotDummy, sammenlignPassord } from '../auth.js'
+import { BrukernavnOpptattFeil } from '../feil.js'
 import { autentiser } from '../middleware.js'
-import { erBlokkert, nullstillForsok, registrerMislykketForsok } from '../rateLimiter.js'
+import { erBlokkert, nullstillForsok, registrerMislykketForsok, tillatHendelse } from '../rateLimiter.js'
 import {
   finnBrukerVedBrukernavn,
   hentBrukere,
@@ -24,6 +25,9 @@ const COOKIE_INNSTILLINGER = {
   secure: process.env.NODE_ENV === 'production',
   maxAge: 12 * 60 * 60 * 1000,
 }
+const MAKS_REGISTRERINGER_PER_TIME = 5
+const TIME_MS = 60 * 60 * 1000
+
 const COOKIE_SLETTE_INNSTILLINGER = {
   httpOnly: COOKIE_INNSTILLINGER.httpOnly,
   sameSite: COOKIE_INNSTILLINGER.sameSite,
@@ -40,14 +44,18 @@ authRuter.post('/registrer-avdeling', asyncHandler(async (req, res) => {
     typeof avdelingNavn !== 'string' ||
     avdelingNavn.trim().length < 2 ||
     !erGyldigBrukernavn(brukernavn) ||
-    typeof passord !== 'string' ||
-    passord.length < 8 ||
+    !erGyldigPassord(passord) ||
     typeof navn !== 'string' ||
     navn.trim().length < 1
   ) {
     res.status(400).json({
-      feil: 'Ugyldige felt. Avdelingsnavn og navn må fylles ut, brukernavn 3-50 tegn (bokstaver/tall/._-), passord minst 8 tegn.',
+      feil: 'Ugyldige felt. Avdelingsnavn og navn må fylles ut, brukernavn 3-50 tegn (bokstaver/tall/._-), passord 8-72 tegn.',
     })
+    return
+  }
+  // Hver registrering koster en bcrypt-hash og oppretter en avdeling - begrens per IP.
+  if (!tillatHendelse(`registrer:${req.ip}`, MAKS_REGISTRERINGER_PER_TIME, TIME_MS)) {
+    res.status(429).json({ feil: 'For mange registreringer fra denne adressen. Prøv igjen senere.' })
     return
   }
   const finnesFra = await finnBrukerVedBrukernavn(brukernavn)
@@ -65,7 +73,16 @@ authRuter.post('/registrer-avdeling', asyncHandler(async (req, res) => {
     navn: navn.trim(),
     opprettet: new Date().toISOString(),
   }
-  await leggTilBruker(bruker)
+  try {
+    await leggTilBruker(bruker)
+  } catch (err) {
+    // To samtidige registreringer med samme brukernavn: den andre taper.
+    if (err instanceof BrukernavnOpptattFeil) {
+      res.status(409).json({ feil: 'Brukernavnet er allerede i bruk.' })
+      return
+    }
+    throw err
+  }
   const token = lagToken({ brukerId: bruker.id, tenantId: tenant.id, rolle: 'avdelingsleder' })
   res.cookie('token', token, COOKIE_INNSTILLINGER)
   await loggInnlogging({
@@ -98,7 +115,13 @@ authRuter.post('/login', asyncHandler(async (req, res) => {
     return
   }
   const bruker = await finnBrukerVedBrukernavn(brukernavn)
-  const gyldig = bruker ? await sammenlignPassord(passord, bruker.passordHash) : false
+  let gyldig = false
+  if (bruker) {
+    gyldig = await sammenlignPassord(passord, bruker.passordHash)
+  } else {
+    // Bruk like lang tid som ved et ekte brukernavn, så svartiden ikke avslører hvilke brukernavn som finnes.
+    await sammenlignMotDummy(passord)
+  }
   if (!bruker || !gyldig) {
     registrerMislykketForsok(nokkel)
     res.status(401).json({ feil: 'Feil brukernavn eller passord.' })
