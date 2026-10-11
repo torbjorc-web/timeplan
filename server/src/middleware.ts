@@ -59,9 +59,14 @@ export async function kreverAktivLisens(req: Request, res: Response, next: NextF
     next()
     return
   }
-  const tenant = await hentTenantById(req.bruker.tenantId)
-  if (!tenant || !harGyldigLisens(tenant)) {
-    res.status(402).json({ feil: 'Lisensen for avdelingen er utløpt eller sperret. Kontakt avdelingsleder for å fornye.' })
+  try {
+    const tenant = await hentTenantById(req.bruker.tenantId)
+    if (!tenant || !harGyldigLisens(tenant)) {
+      res.status(402).json({ feil: 'Lisensen for avdelingen er utløpt eller sperret. Kontakt avdelingsleder for å fornye.' })
+      return
+    }
+  } catch (err) {
+    next(err)
     return
   }
   next()

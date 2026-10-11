@@ -14,6 +14,7 @@ import { tilbakemeldingerRuter } from './routes/tilbakemeldinger.js'
 import { autentiser, blokkerDemoSkriving, kreverAktivLisens } from './middleware.js'
 import { APP_URL } from './stripe.js'
 import { seedDemoKonto } from './seedDemo.js'
+import { feilHaandterer } from './asyncHandler.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PORT = Number(process.env.PORT ?? 3001)
@@ -21,6 +22,10 @@ const KLIENT_DIST = join(__dirname, '..', '..', 'dist')
 
 const app = express()
 app.disable('x-powered-by')
+// Bak Render/Netlify-proxy er req.ip ellers proxyens adresse - da deler alle brukere samme IP i
+// rate limiteren og innloggingsloggen. Standard: én proxy-hop i produksjon (overstyr med TRUST_PROXY).
+// Antall proxy-hop foran serveren (Render = 1). 0 lokalt.
+app.set('trust proxy', Number(process.env.TRUST_PROXY ?? (process.env.NODE_ENV === 'production' ? 1 : 0)))
 app.use(helmet())
 // Frontend kan kjøre på en annen origin (f.eks. Netlify) enn API-et (Render) - tillat den med cookies.
 app.use(cors({ origin: APP_URL, credentials: true }))
@@ -50,6 +55,11 @@ if (existsSync(KLIENT_DIST)) {
     res.sendFile(join(KLIENT_DIST, 'index.html'))
   })
 }
+
+app.use(feilHaandterer)
+
+// Siste skanse: logg i stedet for å la en glemt feil ta ned hele prosessen.
+process.on('unhandledRejection', (grunn) => console.error('Unhandled rejection:', grunn))
 
 seedDemoKonto()
   .catch((feil) => console.error('Klarte ikke å seede demo-konto:', feil))

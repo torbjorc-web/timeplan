@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { asyncHandler } from '../asyncHandler.js'
 import { randomUUID } from 'node:crypto'
 import { hashPassord } from '../auth.js'
 import { kreverRolle } from '../middleware.js'
@@ -17,12 +18,12 @@ function utenPassord(b: Bruker): BrukerUtenPassord {
   return { id: b.id, tenantId: b.tenantId, brukernavn: b.brukernavn, rolle: b.rolle, laererId: b.laererId, navn: b.navn }
 }
 
-brukereRuter.get('/', kreverRolle('avdelingsleder'), async (req, res) => {
+brukereRuter.get('/', kreverRolle('avdelingsleder'), asyncHandler(async (req, res) => {
   const brukere = await hentBrukereForTenant(req.bruker!.tenantId)
   res.json(brukere.map(utenPassord))
-})
+}))
 
-brukereRuter.post('/', kreverRolle('avdelingsleder'), async (req, res) => {
+brukereRuter.post('/', kreverRolle('avdelingsleder'), asyncHandler(async (req, res) => {
   const { brukernavn, passord, navn, rolle, laererId } = req.body ?? {}
   if (
     !erGyldigBrukernavn(brukernavn) ||
@@ -58,13 +59,13 @@ brukereRuter.post('/', kreverRolle('avdelingsleder'), async (req, res) => {
   }
   await leggTilBruker(ny)
   res.status(201).json(utenPassord(ny))
-})
+}))
 
-brukereRuter.delete('/:id', kreverRolle('avdelingsleder'), async (req, res) => {
+brukereRuter.delete('/:id', kreverRolle('avdelingsleder'), asyncHandler(async (req, res) => {
   const slettet = await slettBruker(req.params.id, req.bruker!.tenantId)
   if (!slettet) {
     res.status(404).json({ feil: 'Fant ikke brukeren.' })
     return
   }
   res.json({ ok: true })
-})
+}))

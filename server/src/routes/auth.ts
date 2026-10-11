@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { asyncHandler } from '../asyncHandler.js'
 import { randomUUID } from 'node:crypto'
 import { hashPassord, lagToken, sammenlignPassord } from '../auth.js'
 import { autentiser } from '../middleware.js'
@@ -33,7 +34,7 @@ function erGyldigBrukernavn(verdi: unknown): verdi is string {
   return typeof verdi === 'string' && /^[a-zA-Z0-9._-]{3,50}$/.test(verdi)
 }
 
-authRuter.post('/registrer-avdeling', async (req, res) => {
+authRuter.post('/registrer-avdeling', asyncHandler(async (req, res) => {
   const { avdelingNavn, brukernavn, passord, navn } = req.body ?? {}
   if (
     typeof avdelingNavn !== 'string' ||
@@ -83,9 +84,9 @@ authRuter.post('/registrer-avdeling', async (req, res) => {
     lisensstatus: tenant.lisensstatus,
     proveperiodeSlutt: tenant.proveperiodeSlutt,
   })
-})
+}))
 
-authRuter.post('/login', async (req, res) => {
+authRuter.post('/login', asyncHandler(async (req, res) => {
   const { brukernavn, passord } = req.body ?? {}
   if (typeof brukernavn !== 'string' || typeof passord !== 'string') {
     res.status(400).json({ feil: 'Brukernavn og passord må fylles ut.' })
@@ -123,14 +124,14 @@ authRuter.post('/login', async (req, res) => {
     lisensstatus: tenant?.lisensstatus,
     proveperiodeSlutt: tenant?.proveperiodeSlutt,
   })
-})
+}))
 
 authRuter.post('/logout', (_req, res) => {
   res.clearCookie('token', COOKIE_SLETTE_INNSTILLINGER)
   res.json({ ok: true })
 })
 
-authRuter.get('/meg', autentiser, async (req, res) => {
+authRuter.get('/meg', autentiser, asyncHandler(async (req, res) => {
   if (!req.bruker) {
     res.status(401).json({ feil: 'Ikke innlogget.' })
     return
@@ -149,4 +150,4 @@ authRuter.get('/meg', autentiser, async (req, res) => {
     lisensstatus: tenant?.lisensstatus,
     proveperiodeSlutt: tenant?.proveperiodeSlutt,
   })
-})
+}))

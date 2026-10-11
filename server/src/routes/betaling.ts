@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { asyncHandler } from '../asyncHandler.js'
 import type Stripe from 'stripe'
 import { autentiser, kreverRolle } from '../middleware.js'
 import { APP_URL, stripe, STRIPE_PRIS_ID, STRIPE_WEBHOOK_HEMMELIGHET } from '../stripe.js'
@@ -6,7 +7,7 @@ import { hentTenantById, hentTenantByStripeCustomerId, oppdaterTenant } from '..
 
 export const betalingRuter = Router()
 
-betalingRuter.post('/opprett-checkout', autentiser, kreverRolle('avdelingsleder'), async (req, res) => {
+betalingRuter.post('/opprett-checkout', autentiser, kreverRolle('avdelingsleder'), asyncHandler(async (req, res) => {
   if (!stripe || !STRIPE_PRIS_ID) {
     res.status(503).json({ feil: 'Betalingsløsning er ikke konfigurert på serveren ennå. Kontakt support.' })
     return
@@ -28,10 +29,10 @@ betalingRuter.post('/opprett-checkout', autentiser, kreverRolle('avdelingsleder'
     cancel_url: `${APP_URL}/?betaling=avbrutt`,
   })
   res.json({ url: session.url })
-})
+}))
 
 /** Mottas med express.raw (rå body) - se index.ts. Krever IKKE innlogging (Stripe kaller direkte). */
-betalingRuter.post('/webhook', async (req, res) => {
+betalingRuter.post('/webhook', asyncHandler(async (req, res) => {
   if (!stripe || !STRIPE_WEBHOOK_HEMMELIGHET) {
     res.status(503).send('Webhook er ikke konfigurert.')
     return
@@ -65,4 +66,4 @@ betalingRuter.post('/webhook', async (req, res) => {
   }
 
   res.json({ mottatt: true })
-})
+}))

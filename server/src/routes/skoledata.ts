@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { asyncHandler } from '../asyncHandler.js'
 import { hentBrukere, hentSkoledata, lagreSkoledata } from '../store.js'
 import { kreverRolle } from '../middleware.js'
 import type { MinimalAppData } from '../types.js'
@@ -28,7 +29,7 @@ function filtrerForLaerer(data: MinimalAppData, laererId: string | undefined): M
   return { aktivtSkoleaar: data.aktivtSkoleaar, skoleaar: filtrertSkoleaar }
 }
 
-skoledataRuter.get('/', async (req, res) => {
+skoledataRuter.get('/', asyncHandler(async (req, res) => {
   const bruker = req.bruker!
   const data = ((await hentSkoledata(bruker.tenantId)) as MinimalAppData | null) ?? tomAppData()
   if (bruker.rolle === 'laerer') {
@@ -38,9 +39,9 @@ skoledataRuter.get('/', async (req, res) => {
     return
   }
   res.json(data)
-})
+}))
 
-skoledataRuter.put('/', kreverRolle('avdelingsleder'), async (req, res) => {
+skoledataRuter.put('/', kreverRolle('avdelingsleder'), asyncHandler(async (req, res) => {
   const bruker = req.bruker!
   if (!erGyldigAppData(req.body)) {
     res.status(400).json({ feil: 'Ugyldig format på skoledata.' })
@@ -48,4 +49,4 @@ skoledataRuter.put('/', kreverRolle('avdelingsleder'), async (req, res) => {
   }
   await lagreSkoledata(bruker.tenantId, req.body)
   res.json({ ok: true })
-})
+}))

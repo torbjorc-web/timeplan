@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AuthProvider } from './AuthContext'
 import { useAuth } from './useAuth'
 import { ApiFeil } from './api'
@@ -35,12 +35,21 @@ type Fane =
   | 'timeplan'
   | 'tilbakemelding'
 
+/** Ventetid etter siste endring før data lagres til serveren (unngår ett PUT per tastetrykk). */
+const LAGRE_DEBOUNCE_MS = 500
+
 function AppInnhold() {
   const { bruker, laster, loggUt } = useAuth()
   const { t } = useI18n()
   const [appData, setAppData] = useState<AppData | null>(null)
   const [feilmelding, setFeilmelding] = useState<string | null>(null)
   const [fane, setFane] = useState<Fane>('aarsplan')
+  const sistLastetFraServer = useRef<AppData | null>(null)
+  const lagreKo = useRef<Promise<void>>(Promise.resolve())
+  const tRef = useRef(t)
+  useEffect(() => {
+    tRef.current = t
+  }, [t])
 
   useEffect(() => {
     if (!bruker || bruker.rolle === 'superadmin') return
@@ -50,18 +59,30 @@ function AppInnhold() {
         if (!d.aktivtSkoleaar || !d.skoleaar[d.aktivtSkoleaar]) {
           const regelverkValg = localStorage.getItem(REGELVERK_VALG_NOKKEL) as Regelverk | null
           localStorage.removeItem(REGELVERK_VALG_NOKKEL)
+          // Standardoppsettet er IKKE lagret ennå - la lagre-effekten skrive det til serveren.
           setAppData(opprettStandardAppData(regelverkValg ?? undefined))
         } else {
+          // Data hentet fra serveren trenger ikke skrives rett tilbake.
+          sistLastetFraServer.current = d
           setAppData(d)
         }
       })
-      .catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : t.feil.lasteData))
-  }, [bruker, t])
+      .catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : tRef.current.feil.lasteData))
+    // Kun avhengig av innlogget bruker: tidligere hentet byttet av språk (t) dataene på nytt og
+    // overskrev ulagrede endringer.
+  }, [bruker])
 
   useEffect(() => {
     if (!appData || bruker?.rolle !== 'avdelingsleder') return
-    lagreData(appData).catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : t.feil.lagreData))
-  }, [appData, bruker, t])
+    if (appData === sistLastetFraServer.current) return
+    // Debounce, og seriell kø slik at et eldre svar aldri kan overskrive en nyere lagring.
+    const timer = setTimeout(() => {
+      lagreKo.current = lagreKo.current
+        .then(() => lagreData(appData))
+        .catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : tRef.current.feil.lagreData))
+    }, LAGRE_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  }, [appData, bruker])
 
   const skoleData: SkoleData | null = useMemo(() => {
     if (!appData) return null
