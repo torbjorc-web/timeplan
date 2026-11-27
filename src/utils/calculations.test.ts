@@ -60,6 +60,8 @@ describe('beregnFagbehovForTrinn', () => {
     const resultat = beregnFagbehovForTrinn('ungdomstrinn', klasser, fagListe, 39)
     const valgfag = resultat.find((r) => r.fagId === 'valgfag')
     const kropp = resultat.find((r) => r.fagId === 'kropp')
+    expect(resultat).toHaveLength(fagListe.length)
+    expect(new Set(resultat.map((r) => r.fagId)).size).toBe(resultat.length)
     // Begge bruker samme (laveste) delingstall og samme gruppetall, uansett rekkefølge i fagListe.
     expect(valgfag?.delingstallBrukt).toBe(20)
     expect(kropp?.delingstallBrukt).toBe(20)
