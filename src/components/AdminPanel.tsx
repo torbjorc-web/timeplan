@@ -57,7 +57,19 @@ export function AdminPanel() {
       .catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : t.feil.lasteAdminData))
   }
 
-  useEffect(lastInn, [])
+  useEffect(() => {
+    Promise.all([
+      apiGet<TenantMedStatus[]>('/admin/tenants'),
+      apiGet<Innloggingsoppforing[]>('/admin/innlogginger'),
+      apiGet<TilbakemeldingMedTenant[]>('/admin/tilbakemeldinger'),
+    ])
+      .then(([tenantListe, innloggingListe, tilbakemeldingListe]) => {
+        setTenants(tenantListe)
+        setInnlogginger(innloggingListe)
+        setTilbakemeldinger(tilbakemeldingListe)
+      })
+      .catch((e) => setFeilmelding(e instanceof ApiFeil ? e.message : t.feil.lasteAdminData))
+  }, [t.feil.lasteAdminData])
 
   async function endreLisens(id: string, handling: 'frigi' | 'sperr') {
     try {
