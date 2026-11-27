@@ -5,10 +5,14 @@ import type { MinimalAppData } from '../types.js'
 
 export const skoledataRuter = Router()
 
+function erObjekt(verdi: unknown): verdi is Record<string, unknown> {
+  return typeof verdi === 'object' && verdi !== null && !Array.isArray(verdi)
+}
+
 function erGyldigAppData(verdi: unknown): verdi is MinimalAppData {
-  if (!verdi || typeof verdi !== 'object') return false
-  const v = verdi as Record<string, unknown>
-  return typeof v.aktivtSkoleaar === 'string' && typeof v.skoleaar === 'object' && v.skoleaar !== null
+  if (!erObjekt(verdi)) return false
+  if (typeof verdi.aktivtSkoleaar !== 'string' || !erObjekt(verdi.skoleaar)) return false
+  return Object.values(verdi.skoleaar).every(erObjekt)
 }
 
 function tomAppData(): MinimalAppData {

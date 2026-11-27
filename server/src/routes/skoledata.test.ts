@@ -89,6 +89,20 @@ describe('PUT /api/skoledata', () => {
     expect(store.lagreSkoledata).not.toHaveBeenCalled()
   })
 
+  it('avviser skoledata med ugyldig innhold i skoleår', async () => {
+    const ugyldigData = {
+      aktivtSkoleaar: '2024-2025',
+      skoleaar: {
+        '2024-2025': 'ugyldig',
+      },
+    }
+
+    const svar = await request(lagApp('avdelingsleder')).put('/api/skoledata').send(ugyldigData)
+
+    expect(svar.status).toBe(400)
+    expect(store.lagreSkoledata).not.toHaveBeenCalled()
+  })
+
   it('avviser bruker som ikke er avdelingsleder', async () => {
     const svar = await request(lagApp('laerer')).put('/api/skoledata').send(eksempelData)
 
