@@ -44,6 +44,8 @@ export function beregnFagbehovForTrinn(
   for (const fag of fagListe) {
     if (behandlet.has(fag.id)) continue
     const kobletFag = fag.kobletFagId ? fagListe.find((f) => f.id === fag.kobletFagId) : undefined
+    const kobletFraAnnetFag = !kobletFag && fagListe.some((f) => f.kobletFagId === fag.id)
+    if (kobletFraAnnetFag) continue
 
     if (kobletFag) {
       // Slå sammen elevtall for de to koblede fagene (f.eks. kroppsøving + valgfag).
